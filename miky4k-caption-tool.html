@@ -744,6 +744,7 @@
 
     <!-- Panel: review -->
     <div class="output-panel" id="panel-review">
+      <div id="profileBadge" style="display:none; font-size:9px; color:var(--violet); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:12px; padding:8px 12px; background:rgba(176,143,245,0.06); border:1px solid rgba(176,143,245,0.15); border-radius:6px;"></div>
       <button class="btn-review" id="reviewBtn" onclick="generateReview()">✦ Analizza e critica la caption</button>
 
       <div class="output-section" id="reviewSection" style="display:none; margin-top:16px;">
@@ -775,6 +776,24 @@
   let currentTone = 'amichevole';
   let uploadedImageBase64 = null;
   let uploadedImageType = null;
+
+  // ─── Style Profile — apprendimento dalle review ───────────
+  let styleProfile = JSON.parse(localStorage.getItem('miky4k_style_profile') || '{}');
+  // styleProfile = { strengths: [], weaknesses: [], avoid: [], bestExamples: [] }
+
+  function saveStyleProfile() {
+    localStorage.setItem('miky4k_style_profile', JSON.stringify(styleProfile));
+  }
+
+  function getStyleProfilePrompt() {
+    if (!styleProfile.strengths?.length && !styleProfile.weaknesses?.length) return '';
+    let prompt = '\n\nPROFILO DI STILE APPRESO DALLE REVIEW PRECEDENTI (tienine conto per migliorare):';
+    if (styleProfile.strengths?.length) prompt += `\nPunti di forza da mantenere: ${styleProfile.strengths.join('; ')}`;
+    if (styleProfile.weaknesses?.length) prompt += `\nDebolezze ricorrenti da evitare: ${styleProfile.weaknesses.join('; ')}`;
+    if (styleProfile.avoid?.length) prompt += `\nPattern da evitare: ${styleProfile.avoid.join('; ')}`;
+    if (styleProfile.bestExamples?.length) prompt += `\nEsempio di caption eccellente da cui prendere ispirazione:\n"${styleProfile.bestExamples[styleProfile.bestExamples.length - 1]}"`;
+    return prompt;
+  }
 
   function setTab(tab) {
     currentTab = tab;
@@ -827,12 +846,15 @@ Rispondi SOLO con JSON valido, nessun testo aggiuntivo, nessun markdown, con que
 - "score": numero intero da 1 a 10
 - "verdict": una frase secca che riassume il giudizio (max 8 parole, in inglese)
 - "analysis": analisi critica onesta in inglese — cosa funziona, cosa non funziona, perché. Sii diretto, non compiacente. Identifica le righe forti e quelle deboli. Max 120 parole.
-- "improved": versione migliorata della caption, rispettando lo stesso scheletro (TITOLO / . / corpo / . / call to action) ma con le modifiche necessarie. In inglese.`;
+- "improved": versione migliorata della caption, rispettando lo stesso scheletro (TITOLO / . / corpo / . / call to action) ma con le modifiche necessarie. In inglese.
+- "strengths": array di 1-3 brevi stringhe in inglese che descrivono cosa ha funzionato bene (es. "strong opening hook", "specific visual metaphor").
+- "weaknesses": array di 1-3 brevi stringhe in inglese che descrivono i punti deboli ricorrenti (es. "too many adjectives", "weak CTA").
+- "avoid": array di 1-2 pattern specifici da evitare in futuro (es. "avoid starting with 'This is'", "avoid generic closing questions").`;
 
     try {
       const data = await callAPI({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
+        max_tokens: 1200,
         system: systemPrompt,
         messages: [{ role: "user", content: `Analizza questa caption:\n\n${caption}` }]
       });
@@ -846,12 +868,57 @@ Rispondi SOLO con JSON valido, nessun testo aggiuntivo, nessun markdown, con que
       document.getElementById('reviewEdit').textContent = parsed.improved;
       document.getElementById('reviewSection').style.display = 'block';
 
+      // ─── Aggiorna il profilo di stile ───────────────────────
+      if (!styleProfile.strengths) styleProfile.strengths = [];
+      if (!styleProfile.weaknesses) styleProfile.weaknesses = [];
+      if (!styleProfile.avoid) styleProfile.avoid = [];
+      if (!styleProfile.bestExamples) styleProfile.bestExamples = [];
+
+      // Aggiungi nuovi pattern, evita duplicati, max 6 per categoria
+      if (parsed.strengths) {
+        parsed.strengths.forEach(s => {
+          if (!styleProfile.strengths.includes(s)) styleProfile.strengths.push(s);
+        });
+        styleProfile.strengths = styleProfile.strengths.slice(-6);
+      }
+      if (parsed.weaknesses) {
+        parsed.weaknesses.forEach(w => {
+          if (!styleProfile.weaknesses.includes(w)) styleProfile.weaknesses.push(w);
+        });
+        styleProfile.weaknesses = styleProfile.weaknesses.slice(-6);
+      }
+      if (parsed.avoid) {
+        parsed.avoid.forEach(a => {
+          if (!styleProfile.avoid.includes(a)) styleProfile.avoid.push(a);
+        });
+        styleProfile.avoid = styleProfile.avoid.slice(-4);
+      }
+      // Salva la caption migliorata se score >= 8
+      if (parsed.score >= 8) {
+        styleProfile.bestExamples.push(caption);
+        styleProfile.bestExamples = styleProfile.bestExamples.slice(-3);
+      }
+
+      saveStyleProfile();
+      updateProfileBadge();
+
     } catch (err) {
       console.error('Review error:', err);
       btn.textContent = 'errore: ' + err.message.slice(0, 40);
     } finally {
       btn.disabled = false;
       btn.textContent = '↺ Rigenera analisi';
+    }
+  }
+
+  function updateProfileBadge() {
+    const total = (styleProfile.strengths?.length || 0) +
+                  (styleProfile.weaknesses?.length || 0) +
+                  (styleProfile.avoid?.length || 0);
+    const badge = document.getElementById('profileBadge');
+    if (badge) {
+      badge.textContent = total > 0 ? `✦ Profilo attivo (${total} pattern)` : '';
+      badge.style.display = total > 0 ? 'block' : 'none';
     }
   }
 
@@ -993,7 +1060,7 @@ Il tuo compito è generare 3 elementi distinti in formato JSON valido e niente a
    call to action
 
    Il TITOLO è il titolo dell'opera in maiuscolo. Il corpo è il testo principale nel tono richiesto. La call to action è implicita, mai banale, coerente con il tono scelto. Usa "." come separatore esatto tra le sezioni, su righe proprie.
-   ${notes ? `\n   NOTE AGGIUNTIVE DA RISPETTARE: ${notes}` : ''}
+   ${notes ? `\n   NOTE AGGIUNTIVE DA RISPETTARE: ${notes}` : ''}${getStyleProfilePrompt()}
 
 2. "hashtags": array di esattamente 5 hashtag in inglese, mix di niche (arte 3D specifica) e medium (reach moderata). NO hashtag generico tipo #art #digital. Scegli hashtag realmente usati dalla community CG/3D art su Instagram.
 
@@ -1061,6 +1128,9 @@ Piattaforma: ${platform}` });
       }, 2000);
     });
   }
+
+  // Init
+  updateProfileBadge();
 </script>
 </body>
 </html>
