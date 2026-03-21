@@ -926,10 +926,64 @@
 </div>
 
 <script>
+  // ─── Supabase config ─────────────────────────────────────
+  const SUPABASE_URL = 'https://vzkvgcspjpbzoyevhlpu.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6a3ZnY3NwanBiem95ZXZobHB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTc2NTAsImV4cCI6MjA4OTY5MzY1MH0.ZNrk7w5UvSIbASMzeq5PgLFTKIEtE8i-tJEchj96GCw';
+
+  const db = {
+    async fetch(table) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?order=date.asc`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      return res.json();
+    },
+    async insert(table, row) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(row)
+      });
+      return res.json();
+    },
+    async insertMany(table, rows) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(rows)
+      });
+      return res.json();
+    },
+    async delete(table, id) {
+      await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+    },
+    async deleteAll(table) {
+      await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=gt.0`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+    }
+  };
+
   // ─── State ───────────────────────────────────────────────
-  let posts = JSON.parse(localStorage.getItem('miky4k_posts') || '[]');
+  let posts = [];
   let snapshot = JSON.parse(localStorage.getItem('miky4k_snapshot') || '{}');
   let charts = {};
+
+  // ─── Load posts from Supabase ─────────────────────────────
+  async function loadPosts() {
+    try {
+      posts = await db.fetch('posts');
+      if (!Array.isArray(posts)) posts = [];
+      document.getElementById('totalPostsCount').textContent = posts.length;
+      renderDashboard();
+    } catch(err) {
+      console.error('Errore caricamento post:', err);
+      posts = [];
+    }
+  }
 
   // ─── Navigation ──────────────────────────────────────────
   function navigate(page) {
@@ -943,14 +997,8 @@
     if (page === 'settings') loadSnapshotForm();
   }
 
-  // ─── Save ─────────────────────────────────────────────────
-  function save() {
-    localStorage.setItem('miky4k_posts', JSON.stringify(posts));
-    document.getElementById('totalPostsCount').textContent = posts.length;
-  }
-
   // ─── Add post ─────────────────────────────────────────────
-  function addPost() {
+  async function addPost() {
     const followers = parseInt(document.getElementById('f-followers').value) || 0;
     const likes     = parseInt(document.getElementById('f-likes').value) || 0;
     const comments  = parseInt(document.getElementById('f-comments').value) || 0;
@@ -959,7 +1007,7 @@
     const reach     = parseInt(document.getElementById('f-reach').value) || 0;
 
     const er = followers > 0
-      ? (((likes + comments + saves + shares) / followers) * 100).toFixed(2)
+      ? parseFloat((((likes + comments + saves + shares) / followers) * 100).toFixed(2))
       : 0;
 
     const post = {
@@ -974,13 +1022,18 @@
       shares,
       hashtags: document.getElementById('f-hashtags').value,
       notes: document.getElementById('f-notes').value,
-      er: parseFloat(er)
+      er
     };
 
-    posts.push(post);
-    save();
-    clearForm();
-    alert('Post salvato ✦');
+    try {
+      await db.insert('posts', post);
+      posts.push(post);
+      document.getElementById('totalPostsCount').textContent = posts.length;
+      clearForm();
+      alert('Post salvato ✦');
+    } catch(err) {
+      alert('Errore nel salvataggio: ' + err.message);
+    }
   }
 
   function clearForm() {
@@ -988,11 +1041,16 @@
       .forEach(id => document.getElementById(id).value = '');
   }
 
-  function deletePost(id) {
+  async function deletePost(id) {
     if (!confirm('Eliminare questo post?')) return;
-    posts = posts.filter(p => p.id !== id);
-    save();
-    renderPostsTable();
+    try {
+      await db.delete('posts', id);
+      posts = posts.filter(p => p.id !== id);
+      document.getElementById('totalPostsCount').textContent = posts.length;
+      renderPostsTable();
+    } catch(err) {
+      alert('Errore eliminazione: ' + err.message);
+    }
   }
 
   // ─── CSV Import ───────────────────────────────────────────
@@ -1000,11 +1058,11 @@
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const lines = e.target.result.trim().split('\n');
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-        let imported = 0;
+        const rows = [];
 
         for (let i = 1; i < lines.length; i++) {
           const vals = lines[i].split(',');
@@ -1017,10 +1075,10 @@
           const saves     = parseInt(row.saves) || 0;
           const shares    = parseInt(row.shares) || 0;
           const er = followers > 0
-            ? (((likes + comments + saves + shares) / followers) * 100).toFixed(2)
+            ? parseFloat((((likes + comments + saves + shares) / followers) * 100).toFixed(2))
             : 0;
 
-          posts.push({
+          rows.push({
             id: Date.now() + i,
             date: row.date || '',
             title: row.title || 'Import',
@@ -1033,13 +1091,14 @@
             shares,
             hashtags: row.hashtags || '',
             notes: row.notes || '',
-            er: parseFloat(er)
+            er
           });
-          imported++;
         }
 
-        save();
-        document.getElementById('csv-status').textContent = `✦ ${imported} post importati correttamente.`;
+        await db.insertMany('posts', rows);
+        posts = [...posts, ...rows];
+        document.getElementById('totalPostsCount').textContent = posts.length;
+        document.getElementById('csv-status').textContent = `✦ ${rows.length} post importati correttamente.`;
       } catch(err) {
         document.getElementById('csv-status').textContent = 'Errore nel parsing del CSV.';
         console.error(err);
@@ -1048,7 +1107,7 @@
     reader.readAsText(file);
   }
 
-  // ─── Snapshot ─────────────────────────────────────────────
+  // ─── Snapshot (resta su localStorage) ────────────────────
   function loadSnapshotForm() {
     if (snapshot.followers) document.getElementById('s-followers').value = snapshot.followers;
     if (snapshot.avgLikes)  document.getElementById('s-avg-likes').value = snapshot.avgLikes;
@@ -1089,13 +1148,17 @@
   }
 
   // ─── Reset ────────────────────────────────────────────────
-  function resetData() {
-    if (!confirm('Sei sicuro? Tutti i post salvati verranno eliminati.')) return;
-    posts = [];
-    localStorage.removeItem('miky4k_posts');
-    save();
-    renderPostsTable();
-    alert('Dati resettati.');
+  async function resetData() {
+    if (!confirm('Sei sicuro? Tutti i post verranno eliminati da Supabase.')) return;
+    try {
+      await db.deleteAll('posts');
+      posts = [];
+      document.getElementById('totalPostsCount').textContent = 0;
+      renderPostsTable();
+      alert('Dati resettati.');
+    } catch(err) {
+      alert('Errore reset: ' + err.message);
+    }
   }
 
   // ─── Dashboard ────────────────────────────────────────────
@@ -1280,8 +1343,7 @@
   }
 
   // ─── Init ─────────────────────────────────────────────────
-  document.getElementById('totalPostsCount').textContent = posts.length;
-  if (posts.length) renderDashboard();
+  loadPosts();
 </script>
 </body>
 </html>
