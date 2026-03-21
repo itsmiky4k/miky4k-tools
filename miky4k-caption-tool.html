@@ -67,9 +67,30 @@
   header {
     margin-bottom: 56px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    justify-content: space-between;
     gap: 16px;
   }
+
+  .header-left { display: flex; align-items: baseline; gap: 16px; }
+
+  .btn-hub {
+    background: none;
+    border: 1px solid var(--dim);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .btn-hub:hover { border-color: var(--violet); color: var(--violet); }
 
   .logo {
     font-family: 'Cormorant Garamond', serif;
@@ -589,8 +610,11 @@
 <div class="container">
 
   <header>
-    <div class="logo">miky<span>.4k</span></div>
-    <div class="tagline">Caption Studio — SOFT_STATE Series</div>
+    <div class="header-left">
+      <div class="logo">miky<span>.4k</span></div>
+      <div class="tagline">Caption Studio — SOFT_STATE Series</div>
+    </div>
+    <a class="btn-hub" href="index.html">← Hub</a>
   </header>
 
   <!-- Platform tabs -->
