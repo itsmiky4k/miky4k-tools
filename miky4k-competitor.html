@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>miky.4k — Competitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --void: #07040e;
+    --deep: #0e0916;
+    --surface: #130d1e;
+    --surface2: #1a1128;
+    --glass: rgba(255,255,255,0.04);
+    --glass-border: rgba(255,255,255,0.08);
+    --violet: #b08ff5;
+    --rose: #f4a0d4;
+    --orange: #f4956a;
+    --text: #f0e8f5;
+    --muted: #7a6490;
+    --dim: #3d2f50;
+  }
+
+  html, body { min-height: 100%; background: var(--void); color: var(--text); font-family: 'Space Mono', monospace; overflow-x: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 65% 45% at 10% 15%, rgba(176,143,245,0.09) 0%, transparent 70%),
+      radial-gradient(ellipse 45% 55% at 88% 75%, rgba(244,149,106,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 55% 35% at 55% 45%, rgba(244,160,212,0.06) 0%, transparent 65%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .grain {
+    position: fixed; inset: 0; opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px; pointer-events: none; z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: rgba(13,9,22,0.8); border-right: 1px solid var(--glass-border);
+    padding: 40px 20px; display: flex; flex-direction: column; gap: 8px;
+    position: sticky; top: 0; height: 100vh; backdrop-filter: blur(10px);
+  }
+
+  .logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; letter-spacing: 0.05em; margin-bottom: 8px; padding-bottom: 24px; border-bottom: 1px solid var(--dim); }
+  .logo span { background: linear-gradient(90deg, var(--violet), var(--rose), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-style: italic; }
+  .logo-sub { display: block; font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 4px; -webkit-text-fill-color: var(--muted); background: none; }
+
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px; color: var(--muted); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { color: var(--text); background: var(--glass); }
+  .nav-item.active { background: linear-gradient(135deg, rgba(176,143,245,0.15), rgba(244,149,106,0.08)); color: var(--rose); border: 1px solid rgba(176,143,245,0.2); }
+  .nav-icon { font-size: 14px; width: 18px; text-align: center; }
+
+  .sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--dim); font-size: 9px; color: var(--muted); letter-spacing: 0.12em; }
+  .sidebar-footer span { display: block; font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; background: linear-gradient(90deg, var(--violet), var(--rose)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-top: 4px; }
+
+  /* Main */
+  .main { padding: 40px 36px 80px; overflow-y: auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header { margin-bottom: 36px; display: flex; align-items: baseline; justify-content: space-between; }
+  .page-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; }
+  .page-sub { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+  .card-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--glass-border); }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-grid-2 { grid-template-columns: 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  input, select, textarea { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 12px; padding: 10px 12px; outline: none; transition: all 0.2s; width: 100%; appearance: none; }
+  input:focus, select:focus, textarea:focus { border-color: rgba(176,143,245,0.45); background: rgba(176,143,245,0.04); }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+  select option { background: #1a1030; color: var(--text); }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  .btn-primary { padding: 11px 22px; background: linear-gradient(135deg, rgba(176,143,245,0.18), rgba(244,160,212,0.12), rgba(244,149,106,0.10)); border: 1px solid rgba(176,143,245,0.35); border-radius: 6px; color: var(--rose); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: all 0.3s; }
+  .btn-primary:hover { border-color: rgba(244,149,106,0.5); color: var(--orange); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary { padding: 11px 18px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--muted); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+  .btn-secondary:hover { border-color: var(--violet); color: var(--violet); }
+
+  /* Competitor cards */
+  .competitors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 24px; }
+
+  .competitor-card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; padding: 20px; position: relative; transition: border-color 0.2s; }
+  .competitor-card:hover { border-color: rgba(176,143,245,0.25); }
+  .competitor-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--violet), var(--rose), var(--orange)); opacity: 0.4; border-radius: 8px 8px 0 0; }
+
+  .comp-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; margin-bottom: 4px; }
+  .comp-handle { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 14px; }
+  .comp-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .comp-stat-label { font-size: 8px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2px; }
+  .comp-stat-value { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; background: linear-gradient(135deg, var(--violet), var(--rose)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .comp-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+  .comp-tag { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--violet); background: rgba(176,143,245,0.08); border: 1px solid rgba(176,143,245,0.15); border-radius: 8px; padding: 2px 8px; }
+  .comp-actions { display: flex; gap: 8px; }
+  .btn-icon { background: none; border: 1px solid var(--dim); border-radius: 4px; color: var(--muted); font-size: 10px; padding: 4px 8px; cursor: pointer; transition: all 0.2s; font-family: 'Space Mono', monospace; letter-spacing: 0.1em; }
+  .btn-icon:hover { border-color: var(--violet); color: var(--violet); }
+  .btn-icon.danger:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* Analysis output */
+  .analysis-output { display: none; margin-top: 24px; }
+  .analysis-section { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; animation: fadeUp 0.4s ease both; }
+  .analysis-section:nth-child(2) { animation-delay: 0.08s; }
+  .analysis-section:nth-child(3) { animation-delay: 0.16s; }
+  .analysis-section:nth-child(4) { animation-delay: 0.24s; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .analysis-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: var(--glass); border-bottom: 1px solid var(--glass-border); }
+  .analysis-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .analysis-body { padding: 20px; font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 300; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
+  .analysis-body.mono { font-family: 'Space Mono', monospace; font-size: 11px; line-height: 1.9; }
+
+  .copy-btn { background: none; border: 1px solid var(--dim); border-radius: 4px; color: var(--muted); font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 4px 10px; cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { border-color: var(--violet); color: var(--violet); }
+  .copy-btn.copied { border-color: var(--rose); color: var(--rose); }
+
+  /* Loading */
+  .loading { display: none; text-align: center; padding: 40px; color: var(--muted); font-size: 11px; letter-spacing: 0.2em; }
+  .pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin: 0 3px; animation: pulse 1.2s ease-in-out infinite; }
+  .pulse:nth-child(1) { background: var(--violet); }
+  .pulse:nth-child(2) { background: var(--rose); animation-delay: 0.2s; }
+  .pulse:nth-child(3) { background: var(--orange); animation-delay: 0.4s; }
+  @keyframes pulse { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.1); } }
+
+  /* Chart */
+  .chart-card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+  .chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+  .chart-wrap { position: relative; height: 240px; }
+
+  /* Divider */
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--violet), var(--rose), var(--orange), transparent); opacity: 0.2; margin: 24px 0; }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-icon { font-size: 28px; opacity: 0.3; margin-bottom: 10px; }
+  .empty-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; padding: 20px; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">miky<span>.4k<span class="logo-sub">Competitor</span></span></div>
+    <button class="nav-item active" onclick="navigate('overview')"><span class="nav-icon">◈</span> Overview</button>
+    <button class="nav-item" onclick="navigate('add')"><span class="nav-icon">✦</span> Aggiungi</button>
+    <button class="nav-item" onclick="navigate('analyze-caption')"><span class="nav-icon">◻</span> Analizza Caption</button>
+    <button class="nav-item" onclick="navigate('strategy')"><span class="nav-icon">◆</span> Strategia</button>
+    <div class="sidebar-footer">
+      Competitor tracciati
+      <span id="totalCompetitors">0</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Overview -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div><div class="page-title">Competitor</div><div class="page-sub">Overview profili tracciati</div></div>
+      </div>
+
+      <div class="competitors-grid" id="competitors-grid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-icon">◻</div>
+          <div class="empty-label">Nessun competitor aggiunto</div>
+        </div>
+      </div>
+
+      <div class="chart-card" id="chart-card" style="display:none;">
+        <div class="chart-title">Confronto ER medio — miky.4k vs competitor</div>
+        <div class="chart-wrap"><canvas id="chart-compare"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Add competitor -->
+    <div class="page" id="page-add">
+      <div class="page-header">
+        <div><div class="page-title">Aggiungi competitor</div><div class="page-sub">Inserimento manuale</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Profilo competitor</div>
+        <div class="form-grid">
+          <div class="field"><label>Nome / Account</label><input type="text" id="c-name" placeholder="es. @artist3d_xyz" /></div>
+          <div class="field"><label>Follower</label><input type="number" id="c-followers" placeholder="es. 12000" /></div>
+          <div class="field"><label>Like medi / post</label><input type="number" id="c-avg-likes" placeholder="es. 340" /></div>
+          <div class="field"><label>Commenti medi / post</label><input type="number" id="c-avg-comments" placeholder="es. 18" /></div>
+          <div class="field"><label>Frequenza post (settimana)</label><input type="number" id="c-freq" placeholder="es. 3" /></div>
+          <div class="field"><label>ER medio % (opzionale)</label><input type="number" id="c-er" placeholder="es. 3.2" step="0.01" /></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="card-title">Contenuto & Stile</div>
+
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Tipo di contenuti prevalenti</label>
+            <input type="text" id="c-content-types" placeholder="es. reel, carosello, foto" />
+          </div>
+          <div class="field">
+            <label>Toni usati nelle caption</label>
+            <input type="text" id="c-tones" placeholder="es. poetico, narrativo" />
+          </div>
+          <div class="field full">
+            <label>Hashtag ricorrenti</label>
+            <input type="text" id="c-hashtags" placeholder="es. #3dart #digitalart #blender" />
+          </div>
+          <div class="field full">
+            <label>Note libere (stile, punti di forza, cosa funziona)</label>
+            <textarea id="c-notes" placeholder="es. usa sempre musica ambient nei reel, forte identità visiva dark, molto engagement nelle storie..."></textarea>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-primary" onclick="addCompetitor()">✦ Salva competitor</button>
+          <button class="btn-secondary" onclick="clearCompetitorForm()">Cancella</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analyze caption -->
+    <div class="page" id="page-analyze-caption">
+      <div class="page-header">
+        <div><div class="page-title">Analizza Caption</div><div class="page-sub">Incolla caption di un competitor</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Caption da analizzare</div>
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Competitor (opzionale)</label>
+            <input type="text" id="ca-competitor" placeholder="es. @artist3d_xyz" />
+          </div>
+          <div class="field">
+            <label>Piattaforma</label>
+            <select id="ca-platform">
+              <option value="Instagram">Instagram</option>
+              <option value="TikTok">TikTok</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label>Caption del competitor</label>
+            <textarea id="ca-caption" placeholder="Incolla qui la caption del competitor da analizzare..." style="min-height:140px;"></textarea>
+          </div>
+          <div class="field">
+            <label>Like ricevuti (opzionale)</label>
+            <input type="number" id="ca-likes" placeholder="es. 420" />
+          </div>
+          <div class="field">
+            <label>Commenti (opzionale)</label>
+            <input type="number" id="ca-comments" placeholder="es. 24" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" id="analyzeCapBtn" onclick="analyzeCaption()">✦ Analizza</button>
+        </div>
+      </div>
+
+      <div class="loading" id="loading-caption">
+        <span class="pulse"></span><span class="pulse"></span><span class="pulse"></span>
+        <br><br>analizzando...
+      </div>
+
+      <div class="analysis-output" id="caption-output">
+        <div class="analysis-section">
+          <div class="analysis-header"><span class="analysis-label">Analisi della caption</span><button class="copy-btn" onclick="copyText('cap-analysis', this)">Copy</button></div>
+          <div class="analysis-body" id="cap-analysis"></div>
+        </div>
+        <div class="analysis-section">
+          <div class="analysis-header"><span class="analysis-label">Cosa puoi replicare</span><button class="copy-btn" onclick="copyText('cap-replicate', this)">Copy</button></div>
+          <div class="analysis-body" id="cap-replicate"></div>
+        </div>
+        <div class="analysis-section">
+          <div class="analysis-header"><span class="analysis-label">Adattamento per miky.4k</span><button class="copy-btn" onclick="copyText('cap-adapt', this)">Copy</button></div>
+          <div class="analysis-body" id="cap-adapt"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strategy -->
+    <div class="page" id="page-strategy">
+      <div class="page-header">
+        <div><div class="page-title">Strategia</div><div class="page-sub">Analisi competitiva e piano di crescita</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Genera strategia basata sui competitor</div>
+        <p style="font-size:10px; color:var(--muted); margin-bottom:16px; line-height:1.8; letter-spacing:0.05em;">L'AI analizza tutti i competitor che hai inserito e genera una strategia concreta per miky.4k su come crescere organicamente, cosa replicare e cosa differenziare.</p>
+
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Follower attuali miky.4k</label>
+            <input type="number" id="s-my-followers" placeholder="es. 1140" />
+          </div>
+          <div class="field">
+            <label>ER medio attuale %</label>
+            <input type="number" id="s-my-er" placeholder="es. 0.9" step="0.01" />
+          </div>
+          <div class="field full">
+            <label>Obiettivo (opzionale)</label>
+            <input type="text" id="s-goal" placeholder="es. raggiungere 5000 follower in 6 mesi, aumentare l'ER al 3%" />
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-primary" id="strategyBtn" onclick="generateStrategy()">✦ Genera strategia</button>
+        </div>
+      </div>
+
+      <div class="loading" id="loading-strategy">
+        <span class="pulse"></span><span class="pulse"></span><span class="pulse"></span>
+        <br><br>elaborando strategia...
+      </div>
+
+      <div class="analysis-output" id="strategy-output">
+        <div class="analysis-section">
+          <div class="analysis-header"><span class="analysis-label">Analisi competitiva</span><button class="copy-btn" onclick="copyText('str-analysis', this)">Copy</button></div>
+          <div class="analysis-body" id="str-analysis"></div>
+        </div>
+        <div class="analysis-section">
+          <div class="analysis-header"><span class="analysis-label">Gap da colmare</span><button class="copy-btn" onclick="copyText('str-gaps', this)">Copy</button></div>
+          <div class="analysis-body" id="str-gaps"></div>
+        </div>
+        <div class="analysis-section">
+          <div class="analysis-header"><span class="analysis-label">Piano d'azione concreto</span><button class="copy-btn" onclick="copyText('str-plan', this)">Copy</button></div>
+          <div class="analysis-body" id="str-plan"></div>
+        </div>
+        <div class="analysis-section">
+          <div class="analysis-header"><span class="analysis-label">Cosa NON replicare</span><button class="copy-btn" onclick="copyText('str-avoid', this)">Copy</button></div>
+          <div class="analysis-body" id="str-avoid"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const PROXY = 'https://miky4k-proxy.vercel.app/api/claude';
+  let competitors = JSON.parse(localStorage.getItem('miky4k_competitors') || '[]');
+  let chart = null;
+
+  // ─── Navigation ──────────────────────────────────────────
+  function navigate(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (page === 'overview') renderOverview();
+  }
+
+  // ─── Save ─────────────────────────────────────────────────
+  function save() {
+    localStorage.setItem('miky4k_competitors', JSON.stringify(competitors));
+    document.getElementById('totalCompetitors').textContent = competitors.length;
+  }
+
+  // ─── Add competitor ───────────────────────────────────────
+  function addCompetitor() {
+    const followers = parseInt(document.getElementById('c-followers').value) || 0;
+    const avgLikes  = parseInt(document.getElementById('c-avg-likes').value) || 0;
+    const avgComments = parseInt(document.getElementById('c-avg-comments').value) || 0;
+    const erManual  = parseFloat(document.getElementById('c-er').value) || null;
+    const er = erManual || (followers > 0 ? (((avgLikes + avgComments) / followers) * 100).toFixed(2) : 0);
+
+    const comp = {
+      id: Date.now(),
+      name: document.getElementById('c-name').value || 'Senza nome',
+      followers,
+      avgLikes,
+      avgComments,
+      freq: parseInt(document.getElementById('c-freq').value) || 0,
+      er: parseFloat(er),
+      contentTypes: document.getElementById('c-content-types').value,
+      tones: document.getElementById('c-tones').value,
+      hashtags: document.getElementById('c-hashtags').value,
+      notes: document.getElementById('c-notes').value
+    };
+
+    competitors.push(comp);
+    save();
+    clearCompetitorForm();
+    alert('Competitor salvato ✦');
+  }
+
+  function clearCompetitorForm() {
+    ['c-name','c-followers','c-avg-likes','c-avg-comments','c-freq','c-er','c-content-types','c-tones','c-hashtags','c-notes']
+      .forEach(id => document.getElementById(id).value = '');
+  }
+
+  function deleteCompetitor(id) {
+    if (!confirm('Eliminare questo competitor?')) return;
+    competitors = competitors.filter(c => c.id !== id);
+    save();
+    renderOverview();
+  }
+
+  // ─── Overview ─────────────────────────────────────────────
+  function renderOverview() {
+    const grid = document.getElementById('competitors-grid');
+    if (!competitors.length) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">◻</div><div class="empty-label">Nessun competitor aggiunto</div></div>';
+      document.getElementById('chart-card').style.display = 'none';
+      return;
+    }
+
+    grid.innerHTML = competitors.map(c => `
+      <div class="competitor-card">
+        <div class="comp-name">${c.name}</div>
+        <div class="comp-handle">ER: ${c.er}% · ${c.freq}x/settimana</div>
+        <div class="comp-stats">
+          <div><div class="comp-stat-label">Follower</div><div class="comp-stat-value">${c.followers.toLocaleString()}</div></div>
+          <div><div class="comp-stat-label">Like medi</div><div class="comp-stat-value">${c.avgLikes}</div></div>
+        </div>
+        ${c.contentTypes ? `<div class="comp-tags">${c.contentTypes.split(',').map(t => `<span class="comp-tag">${t.trim()}</span>`).join('')}</div>` : ''}
+        <div class="comp-actions">
+          <button class="btn-icon danger" onclick="deleteCompetitor(${c.id})">✕ Rimuovi</button>
+        </div>
+      </div>`).join('');
+
+    // Chart
+    document.getElementById('chart-card').style.display = 'block';
+    const ctx = document.getElementById('chart-compare');
+    if (chart) chart.destroy();
+    const labels = ['miky.4k', ...competitors.map(c => c.name)];
+    const myER = parseFloat(localStorage.getItem('miky4k_my_er') || '0.9');
+    const erData = [myER, ...competitors.map(c => c.er)];
+    const colors = ['rgba(176,143,245,0.7)', ...competitors.map(() => 'rgba(244,160,212,0.5)')];
+
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'ER medio %',
+          data: erData,
+          backgroundColor: colors,
+          borderColor: colors.map(c => c.replace('0.7','1').replace('0.5','1')),
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } }
+        }
+      }
+    });
+  }
+
+  // ─── Analyze Caption ──────────────────────────────────────
+  async function analyzeCaption() {
+    const caption = document.getElementById('ca-caption').value.trim();
+    if (!caption) { alert('Incolla una caption da analizzare.'); return; }
+
+    const btn = document.getElementById('analyzeCapBtn');
+    btn.disabled = true;
+    document.getElementById('loading-caption').style.display = 'block';
+    document.getElementById('caption-output').style.display = 'none';
+
+    const competitor = document.getElementById('ca-competitor').value || 'un competitor';
+    const platform = document.getElementById('ca-platform').value;
+    const likes = document.getElementById('ca-likes').value;
+    const comments = document.getElementById('ca-comments').value;
+
+    const system = `Sei un consulente di social media strategy specializzato in arte digitale 3D.
+Stai analizzando la caption di un competitor per aiutare miky.4k — artista 3D dark e onirico con la serie SOFT_STATE — a capire cosa funziona e come replicarlo con la propria voce.
+Rispondi SOLO con JSON valido, nessun testo aggiuntivo, nessun markdown:
+- "analysis": analisi dettagliata della caption — struttura, tono, hook, CTA, cosa funziona e perché. In italiano. Max 150 parole.
+- "replicate": 3-5 elementi concreti che miky.4k può replicare nella propria strategia. In italiano. Formato lista con "-".
+- "adapt": una versione adattata della caption nello stile SOFT_STATE di miky.4k, mantenendo la struttura TITOLO / . / corpo / . / CTA. In inglese.`;
+
+    const userMsg = `Caption di ${competitor} su ${platform}:
+"${caption}"
+${likes ? `Like: ${likes}` : ''}
+${comments ? `Commenti: ${comments}` : ''}`;
+
+    try {
+      const response = await fetch(PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1200, system, messages: [{ role: 'user', content: userMsg }] })
+      });
+      const data = await response.json();
+      if (!data.content) throw new Error(data.error?.message || 'Errore API');
+      const raw = data.content.map(i => i.text || '').join('').trim();
+      const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+      document.getElementById('cap-analysis').textContent = parsed.analysis;
+      document.getElementById('cap-replicate').textContent = parsed.replicate;
+      document.getElementById('cap-adapt').textContent = parsed.adapt;
+      document.getElementById('caption-output').style.display = 'block';
+
+    } catch (err) {
+      alert('Errore: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      document.getElementById('loading-caption').style.display = 'none';
+    }
+  }
+
+  // ─── Generate Strategy ────────────────────────────────────
+  async function generateStrategy() {
+    if (!competitors.length) { alert('Aggiungi almeno un competitor prima di generare la strategia.'); return; }
+
+    const btn = document.getElementById('strategyBtn');
+    btn.disabled = true;
+    document.getElementById('loading-strategy').style.display = 'block';
+    document.getElementById('strategy-output').style.display = 'none';
+
+    const myFollowers = document.getElementById('s-my-followers').value || '1140';
+    const myER = document.getElementById('s-my-er').value || '0.9';
+    const goal = document.getElementById('s-goal').value || 'crescere organicamente';
+
+    if (myER) localStorage.setItem('miky4k_my_er', myER);
+
+    const compData = competitors.map(c =>
+      `- ${c.name}: ${c.followers.toLocaleString()} follower, ER ${c.er}%, ${c.freq}x/settimana, contenuti: ${c.contentTypes || 'n.d.'}, toni: ${c.tones || 'n.d.'}, note: ${c.notes || 'n.d.'}`
+    ).join('\n');
+
+    const system = `Sei un consulente di crescita e strategia per artisti digitali su Instagram e TikTok.
+Stai elaborando una strategia concreta per miky.4k basata sull'analisi dei competitor.
+miky.4k è un artista 3D dark e onirico con la serie SOFT_STATE — follower attuali: ${myFollowers}, ER medio: ${myER}%.
+Obiettivo: ${goal}.
+Rispondi SOLO con JSON valido, nessun testo aggiuntivo, nessun markdown:
+- "analysis": analisi competitiva — dove si posiziona miky.4k rispetto ai competitor, punti di forza e debolezza del profilo. In italiano. Max 150 parole.
+- "gaps": gap principali da colmare — cosa fanno i competitor che miky.4k non fa ancora, in termini di contenuto, frequenza, tono, formato. In italiano. Formato lista con "-".
+- "plan": piano d'azione concreto con almeno 5 azioni specifiche e misurabili. In italiano. Formato lista con "-".
+- "avoid": cosa NON replicare — elementi dei competitor che non si adattano all'identità di miky.4k o che rischiano di diluire la voce. In italiano. Formato lista con "-".`;
+
+    try {
+      const response = await fetch(PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, system, messages: [{ role: 'user', content: `Competitor:\n${compData}` }] })
+      });
+      const data = await response.json();
+      if (!data.content) throw new Error(data.error?.message || 'Errore API');
+      const raw = data.content.map(i => i.text || '').join('').trim();
+      const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+      document.getElementById('str-analysis').textContent = parsed.analysis;
+      document.getElementById('str-gaps').textContent = parsed.gaps;
+      document.getElementById('str-plan').textContent = parsed.plan;
+      document.getElementById('str-avoid').textContent = parsed.avoid;
+      document.getElementById('strategy-output').style.display = 'block';
+
+    } catch (err) {
+      alert('Errore: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      document.getElementById('loading-strategy').style.display = 'none';
+    }
+  }
+
+  // ─── Copy ─────────────────────────────────────────────────
+  function copyText(id, btn) {
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // ─── Init ─────────────────────────────────────────────────
+  document.getElementById('totalCompetitors').textContent = competitors.length;
+  renderOverview();
+</script>
+</body>
+</html>
