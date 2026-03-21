@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>miky.4k — Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#07040e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="miky.4k">
+<link rel="apple-touch-icon" href="icons/icon-192x192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png">
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512x512.png">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -250,10 +262,49 @@
       </div>
     </a>
 
+    <a class="tool-card" href="miky4k-assistant.html">
+      <div class="tool-header">
+        <span class="tool-icon">◉</span>
+        <span class="tool-arrow">→</span>
+      </div>
+      <div class="tool-name">Assistente</div>
+      <div class="tool-desc">Consulente AI su strategia social, crescita e arte digitale</div>
+      <div class="tool-tags">
+        <span class="tag">Strategia</span>
+        <span class="tag">Feedback</span>
+        <span class="tag">Crescita</span>
+        <span class="tag">SOFT_STATE</span>
+      </div>
+    </a>
+
+    <a class="tool-card" href="miky4k-competitor.html">
+      <div class="tool-header">
+        <span class="tool-icon">⊛</span>
+        <span class="tool-arrow">→</span>
+      </div>
+      <div class="tool-name">Competitor</div>
+      <div class="tool-desc">Analizza i competitor, le loro caption e sviluppa strategie di crescita</div>
+      <div class="tool-tags">
+        <span class="tag">Analisi</span>
+        <span class="tag">Strategia</span>
+        <span class="tag">Confronto</span>
+        <span class="tag">Crescita</span>
+      </div>
+    </a>
+
   </div>
 
   <footer>SOFT_STATE Series — miky.4k studio tools</footer>
 </div>
 
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.log('SW error:', err));
+    });
+  }
+</script>
 </body>
 </html>
