@@ -7,825 +7,231 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --void: #07040e;
-    --deep: #0e0916;
-    --surface: #130d1e;
-    --surface2: #1a1128;
-    --glass: rgba(255,255,255,0.04);
-    --glass-border: rgba(255,255,255,0.08);
-    --violet: #b08ff5;
-    --rose: #f4a0d4;
-    --orange: #f4956a;
-    --accent: #e07bb5;
-    --text: #f0e8f5;
-    --muted: #7a6490;
-    --dim: #3d2f50;
-  }
-
-  html, body {
-    min-height: 100%;
-    background: var(--void);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 65% 45% at 10% 15%, rgba(176,143,245,0.09) 0%, transparent 70%),
-      radial-gradient(ellipse 45% 55% at 88% 75%, rgba(244,149,106,0.07) 0%, transparent 70%),
-      radial-gradient(ellipse 55% 35% at 55% 45%, rgba(244,160,212,0.06) 0%, transparent 65%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .grain {
-    position: fixed;
-    inset: 0;
-    opacity: 0.025;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 256px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .app {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    min-height: 100vh;
-  }
-
-  /* Sidebar */
-  .sidebar {
-    background: rgba(13,9,22,0.8);
-    border-right: 1px solid var(--glass-border);
-    padding: 40px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    backdrop-filter: blur(10px);
-  }
-
-  .logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 300;
-    letter-spacing: 0.05em;
-    margin-bottom: 8px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--dim);
-  }
-
-  .logo span {
-    background: linear-gradient(90deg, var(--violet), var(--rose), var(--orange));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-style: italic;
-  }
-
-  .logo-sub {
-    display: block;
-    font-family: 'Space Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-top: 4px;
-    -webkit-text-fill-color: var(--muted);
-    background: none;
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 6px;
-    color: var(--muted);
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-  }
-
-  .nav-item:hover { color: var(--text); background: var(--glass); }
-  .nav-item.active {
-    background: linear-gradient(135deg, rgba(176,143,245,0.15), rgba(244,149,106,0.08));
-    color: var(--rose);
-    border: 1px solid rgba(176,143,245,0.2);
-  }
-
-  .nav-icon { font-size: 14px; width: 18px; text-align: center; }
-
-  .sidebar-footer {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid var(--dim);
-  }
-
-  .total-posts {
-    font-size: 9px;
-    color: var(--muted);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-
-  .total-posts span {
-    display: block;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 32px;
-    font-weight: 300;
-    background: linear-gradient(90deg, var(--violet), var(--rose));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-top: 4px;
-    letter-spacing: 0;
-  }
-
-  /* Main */
-  .main {
-    padding: 40px 36px 80px;
-    overflow-y: auto;
-  }
-
-  .page { display: none; }
-  .page.active { display: block; }
-
-  .page-header {
-    margin-bottom: 36px;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .page-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 32px;
-    font-weight: 300;
-    letter-spacing: 0.02em;
-  }
-
-  .page-sub {
-    font-size: 9px;
-    color: var(--muted);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-
-  /* KPI cards */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 32px;
-  }
-
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--violet), var(--rose), var(--orange));
-    opacity: 0.5;
-  }
-
-  .kpi-label {
-    font-size: 8px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-
-  .kpi-value {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px;
-    font-weight: 300;
-    line-height: 1;
-    background: linear-gradient(135deg, var(--violet), var(--rose));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .kpi-delta {
-    font-size: 9px;
-    color: var(--muted);
-    margin-top: 6px;
-  }
-
-  .kpi-delta.up { color: #7effc5; }
-  .kpi-delta.down { color: var(--orange); }
-
-  /* Charts */
-  .chart-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .chart-card {
-    background: var(--surface);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    padding: 24px;
-  }
-
-  .chart-card.full { grid-column: 1 / -1; }
-
-  .chart-title {
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 20px;
-  }
-
-  .chart-wrap { position: relative; height: 200px; }
-  .chart-wrap.tall { height: 260px; }
-
-  /* Post table */
-  .table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  table { width: 100%; border-collapse: collapse; }
-
-  thead tr {
-    background: var(--glass);
-    border-bottom: 1px solid var(--glass-border);
-  }
-
-  th {
-    padding: 12px 16px;
-    font-size: 8px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    text-align: left;
-    font-weight: 400;
-  }
-
-  tbody tr {
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    transition: background 0.15s;
-  }
-
-  tbody tr:hover { background: var(--glass); }
-  tbody tr:last-child { border-bottom: none; }
-
-  td {
-    padding: 12px 16px;
-    font-size: 11px;
-    color: var(--text);
-    vertical-align: middle;
-  }
-
-  .td-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 14px;
-    font-weight: 300;
-  }
-
-  .td-type {
-    font-size: 8px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    background: var(--glass);
-    border: 1px solid var(--glass-border);
-    border-radius: 10px;
-    padding: 3px 8px;
-    white-space: nowrap;
-  }
-
-  .td-tone {
-    font-size: 8px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--violet);
-  }
-
-  .td-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px;
-    font-weight: 300;
-  }
-
-  .td-actions { display: flex; gap: 8px; }
-
-  .btn-icon {
-    background: none;
-    border: 1px solid var(--dim);
-    border-radius: 4px;
-    color: var(--muted);
-    font-size: 11px;
-    padding: 4px 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-icon:hover { border-color: var(--violet); color: var(--violet); }
-  .btn-icon.danger:hover { border-color: var(--orange); color: var(--orange); }
-
-  /* Best/worst */
-  .bw-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .bw-card {
-    background: var(--surface);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .bw-header {
-    padding: 14px 20px;
-    background: var(--glass);
-    border-bottom: 1px solid var(--glass-border);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .bw-header.best { color: #7effc5; }
-  .bw-header.worst { color: var(--orange); }
-
-  .bw-item {
-    padding: 16px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .bw-item:last-child { border-bottom: none; }
-
-  .bw-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 15px;
-    font-weight: 300;
-    margin-bottom: 2px;
-  }
-
-  .bw-meta { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; }
-
-  .bw-score {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px;
-    font-weight: 300;
-    background: linear-gradient(135deg, var(--violet), var(--rose));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-align: right;
-  }
-
-  .bw-score.bad {
-    background: linear-gradient(135deg, var(--orange), var(--rose));
-    -webkit-background-clip: text;
-    background-clip: text;
-  }
-
-  .bw-score-label { font-size: 8px; color: var(--muted); letter-spacing: 0.1em; text-align: right; -webkit-text-fill-color: var(--muted); }
-
-  /* Form */
-  .form-card {
-    background: var(--surface);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    padding: 28px;
-    margin-bottom: 20px;
-  }
-
-  .form-card-title {
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--glass-border);
-  }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-
-  .form-grid-2 { grid-template-columns: 1fr 1fr; }
-
-  .field { display: flex; flex-direction: column; gap: 7px; }
-  .field.full { grid-column: 1 / -1; }
-
-  label {
-    font-size: 8px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  input, select, textarea {
-    background: var(--glass);
-    border: 1px solid var(--glass-border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    padding: 10px 12px;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s;
-    width: 100%;
-    appearance: none;
-  }
-
-  input:focus, select:focus, textarea:focus {
-    border-color: rgba(176,143,245,0.45);
-    background: rgba(176,143,245,0.04);
-  }
-
-  select option { background: #1a1030; color: var(--text); }
-
-  .btn-primary {
-    padding: 12px 24px;
-    background: linear-gradient(135deg, rgba(176,143,245,0.18), rgba(244,160,212,0.12), rgba(244,149,106,0.10));
-    border: 1px solid rgba(176,143,245,0.35);
-    border-radius: 6px;
-    color: var(--rose);
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-
-  .btn-primary:hover { border-color: rgba(244,149,106,0.5); color: var(--orange); }
-
-  .btn-secondary {
-    padding: 12px 20px;
-    background: var(--glass);
-    border: 1px solid var(--glass-border);
-    border-radius: 6px;
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-secondary:hover { border-color: var(--violet); color: var(--violet); }
-
-  .btn-row { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
-
-  /* CSV area */
-  .csv-drop {
-    border: 1px dashed var(--dim);
-    border-radius: 8px;
-    padding: 28px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    background: var(--glass);
-    position: relative;
-  }
-
-  .csv-drop:hover { border-color: rgba(176,143,245,0.4); background: rgba(176,143,245,0.04); }
-  .csv-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .csv-drop-icon { font-size: 24px; margin-bottom: 8px; opacity: 0.4; }
-  .csv-drop-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px; }
-  .csv-drop-sub { font-size: 9px; color: var(--dim); }
-
-  /* Empty state */
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-  }
-
-  .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.3; }
-  .empty-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
-
-  /* Divider */
-  .divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--violet), var(--rose), var(--orange), transparent);
-    opacity: 0.2;
-    margin: 28px 0;
-  }
-
-  /* Score badge */
-  .score-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 10px;
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 300;
-  }
-
-  .score-badge.high { background: rgba(126,255,197,0.1); color: #7effc5; border: 1px solid rgba(126,255,197,0.2); }
-  .score-badge.mid { background: rgba(176,143,245,0.1); color: var(--violet); border: 1px solid rgba(176,143,245,0.2); }
-  .score-badge.low { background: rgba(244,149,106,0.1); color: var(--orange); border: 1px solid rgba(244,149,106,0.2); }
-
-  @media (max-width: 900px) {
-    .app { grid-template-columns: 1fr; }
-    .sidebar { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; padding: 20px; }
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
-    .chart-grid { grid-template-columns: 1fr; }
-    .bw-grid { grid-template-columns: 1fr; }
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --void: #07040e; --deep: #0e0916; --surface: #130d1e; --surface2: #1a1128;
+  --glass: rgba(255,255,255,0.04); --glass-border: rgba(255,255,255,0.08);
+  --violet: #b08ff5; --rose: #f4a0d4; --orange: #f4956a; --accent: #e07bb5;
+  --text: #f0e8f5; --muted: #7a6490; --dim: #3d2f50;
+}
+html, body { min-height: 100%; background: var(--void); color: var(--text); font-family: 'Space Mono', monospace; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 65% 45% at 10% 15%, rgba(176,143,245,0.09) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 55% at 88% 75%, rgba(244,149,106,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 55% 35% at 55% 45%, rgba(244,160,212,0.06) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+.grain { position: fixed; inset: 0; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 256px; pointer-events: none; z-index: 0; }
+.app { position: relative; z-index: 1; display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar { background: rgba(13,9,22,0.8); border-right: 1px solid var(--glass-border); padding: 40px 20px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; height: 100vh; backdrop-filter: blur(10px); }
+.logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; letter-spacing: 0.05em; margin-bottom: 8px; padding-bottom: 24px; border-bottom: 1px solid var(--dim); }
+.logo span { background: linear-gradient(90deg, var(--violet), var(--rose), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-style: italic; }
+.logo-sub { display: block; font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 4px; -webkit-text-fill-color: var(--muted); background: none; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px; color: var(--muted); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; border: none; background: none; width: 100%; text-align: left; }
+.nav-item:hover { color: var(--text); background: var(--glass); }
+.nav-item.active { background: linear-gradient(135deg, rgba(176,143,245,0.15), rgba(244,149,106,0.08)); color: var(--rose); border: 1px solid rgba(176,143,245,0.2); }
+.nav-icon { font-size: 14px; width: 18px; text-align: center; }
+.sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--dim); }
+.total-posts { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+.total-posts span { display: block; font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; background: linear-gradient(90deg, var(--violet), var(--rose)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-top: 4px; letter-spacing: 0; }
+
+/* Main */
+.main { padding: 40px 36px 80px; overflow-y: auto; }
+.page { display: none; }
+.page.active { display: block; }
+.page-header { margin-bottom: 36px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.page-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; letter-spacing: 0.02em; }
+.page-sub { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+/* KPI */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
+.kpi-card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; padding: 20px; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--violet), var(--rose), var(--orange)); opacity: 0.5; }
+.kpi-label { font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.kpi-value { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 300; line-height: 1; background: linear-gradient(135deg, var(--violet), var(--rose)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.kpi-delta { font-size: 9px; color: var(--muted); margin-top: 6px; }
+.kpi-delta.up { color: #7effc5; }
+.kpi-delta.down { color: var(--orange); }
+
+/* Charts */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+.chart-card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; padding: 24px; }
+.chart-card.full { grid-column: 1 / -1; }
+.chart-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+.chart-wrap { position: relative; height: 200px; }
+.chart-wrap.tall { height: 260px; }
+
+/* Table */
+.table-wrap { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--glass); border-bottom: 1px solid var(--glass-border); }
+th { padding: 12px 16px; font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: left; font-weight: 400; }
+tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s; }
+tbody tr:hover { background: var(--glass); }
+tbody tr:last-child { border-bottom: none; }
+td { padding: 12px 16px; font-size: 11px; color: var(--text); vertical-align: middle; }
+.td-title { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 300; }
+.td-type { font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; padding: 3px 8px; white-space: nowrap; }
+.td-tone { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--violet); }
+.td-num { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; }
+.td-actions { display: flex; gap: 8px; }
+.btn-icon { background: none; border: 1px solid var(--dim); border-radius: 4px; color: var(--muted); font-size: 11px; padding: 4px 8px; cursor: pointer; transition: all 0.2s; }
+.btn-icon:hover { border-color: var(--violet); color: var(--violet); }
+.btn-icon.danger:hover { border-color: var(--orange); color: var(--orange); }
+
+/* Best/worst */
+.bw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+.bw-card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; }
+.bw-header { padding: 14px 20px; background: var(--glass); border-bottom: 1px solid var(--glass-border); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.bw-header.best { color: #7effc5; }
+.bw-header.worst { color: var(--orange); }
+.bw-item { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; }
+.bw-item:last-child { border-bottom: none; }
+.bw-title { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 300; margin-bottom: 2px; }
+.bw-meta { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; }
+.bw-score { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; background: linear-gradient(135deg, var(--violet), var(--rose)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-align: right; }
+.bw-score.bad { background: linear-gradient(135deg, var(--orange), var(--rose)); -webkit-background-clip: text; background-clip: text; }
+.bw-score-label { font-size: 8px; color: var(--muted); letter-spacing: 0.1em; text-align: right; -webkit-text-fill-color: var(--muted); }
+
+/* Form */
+.form-card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; padding: 28px; margin-bottom: 20px; }
+.form-card-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--glass-border); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.form-grid-2 { grid-template-columns: 1fr 1fr; }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field.full { grid-column: 1 / -1; }
+label { font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+input, select, textarea { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 12px; padding: 10px 12px; outline: none; transition: border-color 0.2s, background 0.2s; width: 100%; appearance: none; }
+input:focus, select:focus, textarea:focus { border-color: rgba(176,143,245,0.45); background: rgba(176,143,245,0.04); }
+select option { background: #1a1030; color: var(--text); }
+.btn-primary { padding: 12px 24px; background: linear-gradient(135deg, rgba(176,143,245,0.18), rgba(244,160,212,0.12), rgba(244,149,106,0.10)); border: 1px solid rgba(176,143,245,0.35); border-radius: 6px; color: var(--rose); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: all 0.3s; }
+.btn-primary:hover { border-color: rgba(244,149,106,0.5); color: var(--orange); }
+.btn-secondary { padding: 12px 20px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--muted); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+.btn-secondary:hover { border-color: var(--violet); color: var(--violet); }
+.btn-row { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+
+/* CSV */
+.csv-drop { border: 1px dashed var(--dim); border-radius: 8px; padding: 28px; text-align: center; cursor: pointer; transition: all 0.3s; background: var(--glass); position: relative; }
+.csv-drop:hover { border-color: rgba(176,143,245,0.4); background: rgba(176,143,245,0.04); }
+.csv-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.csv-drop-icon { font-size: 24px; margin-bottom: 8px; opacity: 0.4; }
+.csv-drop-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px; }
+.csv-drop-sub { font-size: 9px; color: var(--dim); }
+
+/* Empty */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.3; }
+.empty-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
+
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--violet), var(--rose), var(--orange), transparent); opacity: 0.2; margin: 28px 0; }
+
+.score-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-family: 'Cormorant Garamond', serif; font-weight: 300; }
+.score-badge.high { background: rgba(126,255,197,0.1); color: #7effc5; border: 1px solid rgba(126,255,197,0.2); }
+.score-badge.mid { background: rgba(176,143,245,0.1); color: var(--violet); border: 1px solid rgba(176,143,245,0.2); }
+.score-badge.low { background: rgba(244,149,106,0.1); color: var(--orange); border: 1px solid rgba(244,149,106,0.2); }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; padding: 20px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .bw-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 <div class="grain"></div>
-
 <div class="app">
-
-  <!-- Sidebar -->
   <aside class="sidebar">
-    <div class="logo">
-      miky<span>.4k<span class="logo-sub">Analytics</span></span>
-    </div>
-
-    <button class="nav-item active" onclick="navigate('dashboard')">
-      <span class="nav-icon">◈</span> Dashboard
-    </button>
-    <button class="nav-item" onclick="navigate('posts')">
-      <span class="nav-icon">◻</span> Post
-    </button>
-    <button class="nav-item" onclick="navigate('bestworst')">
-      <span class="nav-icon">◆</span> Best / Worst
-    </button>
-    <button class="nav-item" onclick="navigate('add')">
-      <span class="nav-icon">✦</span> Aggiungi
-    </button>
-    <button class="nav-item" onclick="navigate('import')">
-      <span class="nav-icon">↑</span> Import CSV
-    </button>
-    <button class="nav-item" onclick="navigate('settings')">
-      <span class="nav-icon">⊙</span> Impostazioni
-    </button>
-
+    <div class="logo">miky<span>.4k<span class="logo-sub">Analytics</span></span></div>
+    <button class="nav-item active" onclick="navigate('dashboard', this)"><span class="nav-icon">◈</span> Dashboard</button>
+    <button class="nav-item" onclick="navigate('posts', this)"><span class="nav-icon">◻</span> Post</button>
+    <button class="nav-item" onclick="navigate('bestworst', this)"><span class="nav-icon">◆</span> Best / Worst</button>
+    <button class="nav-item" onclick="navigate('add', this)"><span class="nav-icon">✦</span> Aggiungi</button>
+    <button class="nav-item" onclick="navigate('import', this)"><span class="nav-icon">↑</span> Import CSV</button>
+    <button class="nav-item" onclick="navigate('settings', this)"><span class="nav-icon">⊙</span> Impostazioni</button>
     <div class="sidebar-footer">
       <a href="index.html" style="display:block; padding:8px 12px; border:1px solid var(--dim); border-radius:6px; color:var(--muted); font-family:'Space Mono',monospace; font-size:9px; letter-spacing:0.15em; text-transform:uppercase; text-decoration:none; text-align:center; margin-bottom:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--violet)';this.style.color='var(--violet)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--muted)'">← Hub</a>
-      <div class="total-posts">
-        Post tracciati
-        <span id="totalPostsCount">0</span>
-      </div>
+      <div class="total-posts">Post tracciati<span id="totalPostsCount">0</span></div>
     </div>
   </aside>
 
-  <!-- Main -->
   <main class="main">
-
     <!-- Dashboard -->
     <div class="page active" id="page-dashboard">
       <div class="page-header">
         <div>
           <div class="page-title">Dashboard</div>
-          <div class="page-sub">SOFT_STATE — Overview</div>
+          <div class="page-sub" id="dashboard-sub">Overview</div>
         </div>
       </div>
-
       <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label">Follower attuali</div>
-          <div class="kpi-value" id="kpi-followers">—</div>
-          <div class="kpi-delta" id="kpi-followers-delta"></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Like medi / post</div>
-          <div class="kpi-value" id="kpi-avg-likes">—</div>
-          <div class="kpi-delta" id="kpi-likes-delta"></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Reach media / post</div>
-          <div class="kpi-value" id="kpi-avg-reach">—</div>
-          <div class="kpi-delta" id="kpi-reach-delta"></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Engagement rate medio</div>
-          <div class="kpi-value" id="kpi-er">—</div>
-          <div class="kpi-delta" id="kpi-er-delta"></div>
-        </div>
+        <div class="kpi-card"><div class="kpi-label">Follower attuali</div><div class="kpi-value" id="kpi-followers">—</div><div class="kpi-delta" id="kpi-followers-delta"></div></div>
+        <div class="kpi-card"><div class="kpi-label">Like medi / post</div><div class="kpi-value" id="kpi-avg-likes">—</div><div class="kpi-delta" id="kpi-likes-delta"></div></div>
+        <div class="kpi-card"><div class="kpi-label">Reach media / post</div><div class="kpi-value" id="kpi-avg-reach">—</div><div class="kpi-delta" id="kpi-reach-delta"></div></div>
+        <div class="kpi-card"><div class="kpi-label">Engagement rate medio</div><div class="kpi-value" id="kpi-er">—</div><div class="kpi-delta" id="kpi-er-delta"></div></div>
       </div>
-
       <div class="chart-grid">
-        <div class="chart-card full">
-          <div class="chart-title">Crescita follower nel tempo</div>
-          <div class="chart-wrap tall"><canvas id="chart-followers"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Like & Reach per post</div>
-          <div class="chart-wrap"><canvas id="chart-likes-reach"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Performance per tono</div>
-          <div class="chart-wrap"><canvas id="chart-tone"></canvas></div>
-        </div>
+        <div class="chart-card full"><div class="chart-title">Crescita follower nel tempo</div><div class="chart-wrap tall"><canvas id="chart-followers"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Like & Reach per post</div><div class="chart-wrap"><canvas id="chart-likes-reach"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Performance per tono</div><div class="chart-wrap"><canvas id="chart-tone"></canvas></div></div>
       </div>
     </div>
 
     <!-- Posts -->
     <div class="page" id="page-posts">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Tutti i post</div>
-          <div class="page-sub">Tabella completa</div>
-        </div>
-      </div>
-
+      <div class="page-header"><div><div class="page-title">Tutti i post</div><div class="page-sub">Tabella completa</div></div></div>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Opera</th>
-              <th>Tipo</th>
-              <th>Tono</th>
-              <th>Like</th>
-              <th>Reach</th>
-              <th>Commenti</th>
-              <th>Saves</th>
-              <th>ER %</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="posts-table-body">
-            <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">◻</div><div class="empty-label">Nessun post tracciato</div></div></td></tr>
-          </tbody>
+          <thead><tr><th>Data</th><th>Opera</th><th>Tipo</th><th>Tono</th><th>Like</th><th>Reach</th><th>Commenti</th><th>Saves</th><th>ER %</th><th></th></tr></thead>
+          <tbody id="posts-table-body"><tr><td colspan="10"><div class="empty-state"><div class="empty-icon">◻</div><div class="empty-label">Nessun post tracciato</div></div></td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Best / Worst -->
+    <!-- Best/Worst -->
     <div class="page" id="page-bestworst">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Best & Worst</div>
-          <div class="page-sub">Top e bottom performer</div>
-        </div>
-      </div>
-
+      <div class="page-header"><div><div class="page-title">Best & Worst</div><div class="page-sub">Top e bottom performer</div></div></div>
       <div class="bw-grid">
-        <div class="bw-card">
-          <div class="bw-header best">✦ Top 3 per engagement rate</div>
-          <div id="best-er-list"><div class="empty-state"><div class="empty-icon">◆</div><div class="empty-label">Aggiungi post</div></div></div>
-        </div>
-        <div class="bw-card">
-          <div class="bw-header worst">↓ Bottom 3 per engagement rate</div>
-          <div id="worst-er-list"><div class="empty-state"><div class="empty-icon">◆</div><div class="empty-label">Aggiungi post</div></div></div>
-        </div>
-        <div class="bw-card">
-          <div class="bw-header best">✦ Top 3 per reach</div>
-          <div id="best-reach-list"><div class="empty-state"><div class="empty-icon">◆</div><div class="empty-label">Aggiungi post</div></div></div>
-        </div>
-        <div class="bw-card">
-          <div class="bw-header worst">↓ Bottom 3 per like</div>
-          <div id="worst-likes-list"><div class="empty-state"><div class="empty-icon">◆</div><div class="empty-label">Aggiungi post</div></div></div>
-        </div>
+        <div class="bw-card"><div class="bw-header best">✦ Top 3 per engagement rate</div><div id="best-er-list"><div class="empty-state"><div class="empty-icon">◆</div><div class="empty-label">Aggiungi post</div></div></div></div>
+        <div class="bw-card"><div class="bw-header worst">↓ Bottom 3 per engagement rate</div><div id="worst-er-list"><div class="empty-state"><div class="empty-icon">◆</div><div class="empty-label">Aggiungi post</div></div></div></div>
+        <div class="bw-card"><div class="bw-header best">✦ Top 3 per reach</div><div id="best-reach-list"><div class="empty-state"><div class="empty-icon">◆</div><div class="empty-label">Aggiungi post</div></div></div></div>
+        <div class="bw-card"><div class="bw-header worst">↓ Bottom 3 per like</div><div id="worst-likes-list"><div class="empty-state"><div class="empty-icon">◆</div><div class="empty-label">Aggiungi post</div></div></div></div>
       </div>
     </div>
 
     <!-- Add post -->
     <div class="page" id="page-add">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Aggiungi post</div>
-          <div class="page-sub">Inserimento manuale</div>
-        </div>
-      </div>
-
+      <div class="page-header"><div><div class="page-title">Aggiungi post</div><div class="page-sub">Inserimento manuale</div></div></div>
       <div class="form-card">
         <div class="form-card-title">Dati del post</div>
         <div class="form-grid">
-          <div class="field">
-            <label>Data pubblicazione</label>
-            <input type="date" id="f-date" />
-          </div>
-          <div class="field">
-            <label>Opera / Titolo</label>
-            <input type="text" id="f-title" placeholder="es. SOFT_STATE 004A" />
-          </div>
-          <div class="field">
-            <label>Piattaforma</label>
-            <select id="f-platform">
-              <option value="instagram">Instagram</option>
-              <option value="tiktok">TikTok</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Tipo contenuto</label>
-            <select id="f-type">
-              <option value="foto statica">Foto statica</option>
-              <option value="carosello">Carosello</option>
-              <option value="reel AI">Reel AI</option>
-              <option value="clay render">Clay Render</option>
-              <option value="building up">Building Up</option>
-              <option value="animazione 3D">Animazione 3D</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Tono usato</label>
-            <select id="f-tone">
-              <option value="amichevole">Amichevole</option>
-              <option value="poetico">Poetico</option>
-              <option value="pop">Pop</option>
-              <option value="narrativo">Narrativo</option>
-              <option value="concettuale">Concettuale</option>
-              <option value="intimo">Intimo</option>
-              <option value="minimalista">Minimalista</option>
-              <option value="fresco">Fresco</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Follower al momento</label>
-            <input type="number" id="f-followers" placeholder="es. 1140" />
-          </div>
+          <div class="field"><label>Data pubblicazione</label><input type="date" id="f-date" /></div>
+          <div class="field"><label>Opera / Titolo</label><input type="text" id="f-title" placeholder="es. Titolo dell'opera" /></div>
+          <div class="field"><label>Piattaforma</label><select id="f-platform"><option value="instagram">Instagram</option><option value="tiktok">TikTok</option></select></div>
+          <div class="field"><label>Tipo contenuto</label><select id="f-type"><option value="foto statica">Foto statica</option><option value="carosello">Carosello</option><option value="reel">Reel</option><option value="reel AI">Reel AI</option><option value="clay render">Clay Render</option><option value="building up">Building Up</option><option value="animazione 3D">Animazione 3D</option><option value="post promozionale">Post promozionale</option></select></div>
+          <div class="field"><label>Tono usato</label><select id="f-tone"><option value="amichevole">Amichevole</option><option value="poetico">Poetico</option><option value="pop">Pop</option><option value="narrativo">Narrativo</option><option value="concettuale">Concettuale</option><option value="intimo">Intimo</option><option value="minimalista">Minimalista</option><option value="fresco">Fresco</option><option value="promozionale">Promozionale</option></select></div>
+          <div class="field"><label>Follower al momento</label><input type="number" id="f-followers" placeholder="es. 1140" /></div>
+          <div class="field"><label>Serie (opzionale)</label><input type="text" id="f-series" placeholder="es. SOFT_STATE, VOID GARDEN..." /></div>
         </div>
-
         <div class="divider"></div>
         <div class="form-card-title">Metriche</div>
-
         <div class="form-grid">
-          <div class="field">
-            <label>Like</label>
-            <input type="number" id="f-likes" placeholder="0" />
-          </div>
-          <div class="field">
-            <label>Commenti</label>
-            <input type="number" id="f-comments" placeholder="0" />
-          </div>
-          <div class="field">
-            <label>Saves</label>
-            <input type="number" id="f-saves" placeholder="0" />
-          </div>
-          <div class="field">
-            <label>Reach</label>
-            <input type="number" id="f-reach" placeholder="0" />
-          </div>
-          <div class="field">
-            <label>Views (reel)</label>
-            <input type="number" id="f-views" placeholder="0" />
-          </div>
-          <div class="field">
-            <label>Shares</label>
-            <input type="number" id="f-shares" placeholder="0" />
-          </div>
+          <div class="field"><label>Like</label><input type="number" id="f-likes" placeholder="0" /></div>
+          <div class="field"><label>Commenti</label><input type="number" id="f-comments" placeholder="0" /></div>
+          <div class="field"><label>Saves</label><input type="number" id="f-saves" placeholder="0" /></div>
+          <div class="field"><label>Reach</label><input type="number" id="f-reach" placeholder="0" /></div>
+          <div class="field"><label>Views (reel)</label><input type="number" id="f-views" placeholder="0" /></div>
+          <div class="field"><label>Shares</label><input type="number" id="f-shares" placeholder="0" /></div>
         </div>
-
         <div class="form-grid form-grid-2" style="margin-top:14px;">
-          <div class="field full">
-            <label>Hashtag usati (separati da virgola)</label>
-            <input type="text" id="f-hashtags" placeholder="#softstate3d, #3dart, ..." />
-          </div>
-          <div class="field full">
-            <label>Note (opzionale)</label>
-            <input type="text" id="f-notes" placeholder="es. primo reel con musica ambient" />
-          </div>
+          <div class="field full"><label>Hashtag usati (separati da virgola)</label><input type="text" id="f-hashtags" placeholder="#3dart, #digitalart, ..." /></div>
+          <div class="field full"><label>Note (opzionale)</label><input type="text" id="f-notes" placeholder="es. primo reel con musica ambient" /></div>
         </div>
-
         <div class="btn-row" style="margin-top:20px;">
           <button class="btn-primary" onclick="addPost()">✦ Salva post</button>
           <button class="btn-secondary" onclick="clearForm()">Cancella</button>
@@ -835,515 +241,365 @@
 
     <!-- Import CSV -->
     <div class="page" id="page-import">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Import CSV</div>
-          <div class="page-sub">Da Instagram Insights</div>
-        </div>
-      </div>
-
+      <div class="page-header"><div><div class="page-title">Import CSV</div><div class="page-sub">Da Instagram Insights</div></div></div>
       <div class="form-card">
         <div class="form-card-title">Carica file CSV</div>
         <div class="csv-drop" id="csvDrop">
           <input type="file" id="csvInput" accept=".csv" onchange="handleCSV(event)" />
           <div class="csv-drop-icon">↑</div>
           <span class="csv-drop-label">Trascina il CSV o clicca per caricare</span>
-          <span class="csv-drop-sub">Export da Instagram Insights — colonne: date, title, type, likes, comments, saves, reach, views, shares, followers, tone, hashtags</span>
+          <span class="csv-drop-sub">Colonne: date, title, type, tone, likes, comments, saves, reach, views, shares, followers, hashtags, series</span>
         </div>
-
         <div class="divider"></div>
         <div class="form-card-title">Formato atteso</div>
-        <div style="background: var(--void); border: 1px solid var(--glass-border); border-radius: 6px; padding: 16px; font-size: 10px; color: var(--muted); line-height: 1.8; font-family: 'Space Mono', monospace; overflow-x: auto;">
-          date,title,type,tone,likes,comments,saves,reach,views,shares,followers,hashtags<br>
-          2024-03-01,SOFT_STATE 001,foto statica,poetico,24,3,8,340,0,1,,#3dart #softstate<br>
-          2024-03-04,SOFT_STATE 001,reel AI,intimo,18,2,5,280,420,2,,#3dart
+        <div style="background:var(--void); border:1px solid var(--glass-border); border-radius:6px; padding:16px; font-size:10px; color:var(--muted); line-height:1.8; font-family:'Space Mono',monospace; overflow-x:auto;">
+          date,title,type,tone,likes,comments,saves,reach,views,shares,followers,hashtags,series<br>
+          2024-03-01,Opera 001,foto statica,poetico,24,3,8,340,0,1,1140,#3dart #digitalart,SOFT_STATE<br>
+          2024-03-04,Opera 002,reel AI,intimo,18,2,5,280,420,2,1150,#3dart,
         </div>
-
-        <div id="csv-status" style="margin-top:16px; font-size:10px; color: var(--rose); letter-spacing:0.1em;"></div>
+        <div id="csv-status" style="margin-top:16px; font-size:10px; color:var(--rose); letter-spacing:0.1em;"></div>
       </div>
     </div>
 
     <!-- Settings -->
     <div class="page" id="page-settings">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Impostazioni</div>
-          <div class="page-sub">Snapshot manuale & preferenze</div>
-        </div>
-      </div>
-
+      <div class="page-header"><div><div class="page-title">Impostazioni</div><div class="page-sub">Snapshot & preferenze</div></div></div>
       <div class="form-card">
         <div class="form-card-title">Snapshot iniziale — dati attuali</div>
-        <p style="font-size:10px; color:var(--muted); margin-bottom:20px; line-height:1.7; letter-spacing:0.05em;">
-          Inserisci i tuoi dati attuali come punto di partenza. Questi valori vengono mostrati nella Dashboard finché non hai abbastanza post tracciati per calcolarli automaticamente.
-        </p>
+        <p style="font-size:10px; color:var(--muted); margin-bottom:20px; line-height:1.7; letter-spacing:0.05em;">Inserisci i tuoi dati attuali come punto di partenza per la dashboard.</p>
         <div class="form-grid">
-          <div class="field">
-            <label>Follower attuali</label>
-            <input type="number" id="s-followers" placeholder="es. 1140" />
-          </div>
-          <div class="field">
-            <label>Like medi per post</label>
-            <input type="number" id="s-avg-likes" placeholder="es. 10" />
-          </div>
-          <div class="field">
-            <label>Reach media per post</label>
-            <input type="number" id="s-avg-reach" placeholder="es. 300" />
-          </div>
-          <div class="field">
-            <label>Engagement rate medio (%)</label>
-            <input type="number" id="s-avg-er" placeholder="es. 0.9" step="0.01" />
-          </div>
-          <div class="field">
-            <label>Views medie per reel</label>
-            <input type="number" id="s-avg-views" placeholder="es. 420" />
-          </div>
-          <div class="field">
-            <label>Data snapshot</label>
-            <input type="date" id="s-date" />
-          </div>
+          <div class="field"><label>Follower attuali</label><input type="number" id="s-followers" placeholder="es. 1140" /></div>
+          <div class="field"><label>Like medi per post</label><input type="number" id="s-avg-likes" placeholder="es. 10" /></div>
+          <div class="field"><label>Reach media per post</label><input type="number" id="s-avg-reach" placeholder="es. 300" /></div>
+          <div class="field"><label>Engagement rate medio (%)</label><input type="number" id="s-avg-er" placeholder="es. 0.9" step="0.01" /></div>
+          <div class="field"><label>Views medie per reel</label><input type="number" id="s-avg-views" placeholder="es. 420" /></div>
+          <div class="field"><label>Data snapshot</label><input type="date" id="s-date" /></div>
         </div>
-
         <div class="btn-row" style="margin-top:20px;">
           <button class="btn-primary" onclick="saveSnapshot()">✦ Salva snapshot</button>
           <span id="snapshot-status" style="font-size:9px; color:var(--rose); letter-spacing:0.12em;"></span>
         </div>
       </div>
-
       <div class="form-card" style="margin-top:16px;">
         <div class="form-card-title">Gestione dati</div>
-        <p style="font-size:10px; color:var(--muted); margin-bottom:20px; line-height:1.7; letter-spacing:0.05em;">
-          Esporta tutti i tuoi post in CSV, o resetta il database locale.
-        </p>
         <div class="btn-row">
           <button class="btn-secondary" onclick="exportCSV()">↓ Esporta post in CSV</button>
           <button class="btn-secondary" onclick="resetData()" style="border-color:rgba(244,149,106,0.3); color:var(--orange);">✕ Reset dati</button>
         </div>
       </div>
     </div>
-
   </main>
 </div>
 
 <script>
-  // ─── Supabase config ─────────────────────────────────────
-  const SUPABASE_URL = 'https://vzkvgcspjpbzoyevhlpu.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6a3ZnY3NwanBiem95ZXZobHB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTc2NTAsImV4cCI6MjA4OTY5MzY1MH0.ZNrk7w5UvSIbASMzeq5PgLFTKIEtE8i-tJEchj96GCw';
+// ─── Config ────────────────────────────────────────────────
+// NOTA SICUREZZA: questa key è la anon key di Supabase (sola lettura se RLS è configurata).
+// Assicurati di avere Row Level Security abilitata sulla tabella posts in Supabase.
+const SUPABASE_URL = 'https://vzkvgcspjpbzoyevhlpu.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6a3ZnY3NwanBiem95ZXZobHB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTc2NTAsImV4cCI6MjA4OTY5MzY1MH0.ZNrk7w5UvSIbASMzeq5PgLFTKIEtE8i-tJEchj96GCw';
 
-  const db = {
-    async fetch(table) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?order=date.asc`, {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-      });
-      return res.json();
-    },
-    async insert(table, row) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify(row)
-      });
-      return res.json();
-    },
-    async insertMany(table, rows) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify(rows)
-      });
-      return res.json();
-    },
-    async delete(table, id) {
-      await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
-        method: 'DELETE',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-      });
-    },
-    async deleteAll(table) {
-      await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=gt.0`, {
-        method: 'DELETE',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-      });
+const db = {
+  async fetch(table) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?order=date.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    return res.json();
+  },
+  async insert(table, row) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(row)
+    });
+    return res.json();
+  },
+  async insertMany(table, rows) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(rows)
+    });
+    return res.json();
+  },
+  async delete(table, id) {
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+  },
+  async deleteAll(table) {
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=gt.0`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+  }
+};
+
+// ─── State ─────────────────────────────────────────────────
+let posts = [];
+let snapshot = JSON.parse(localStorage.getItem('miky4k_snapshot') || '{}');
+let charts = {};
+
+// ─── Dashboard subtitle dinamico ──────────────────────────
+function updateDashboardSubtitle() {
+  const sub = document.getElementById('dashboard-sub');
+  if (!sub) return;
+  if (posts.length === 0) { sub.textContent = 'Overview'; return; }
+  // Trova serie più usata
+  const seriesMap = {};
+  posts.forEach(p => { if (p.series) seriesMap[p.series] = (seriesMap[p.series] || 0) + 1; });
+  const topSeries = Object.entries(seriesMap).sort((a,b) => b[1]-a[1])[0];
+  sub.textContent = topSeries ? `${topSeries[0]} — Overview` : `${posts.length} post · Overview`;
+}
+
+// ─── Load ──────────────────────────────────────────────────
+async function loadPosts() {
+  try {
+    posts = await db.fetch('posts');
+    if (!Array.isArray(posts)) posts = [];
+    document.getElementById('totalPostsCount').textContent = posts.length;
+    updateDashboardSubtitle();
+    renderDashboard();
+  } catch(err) {
+    console.error('Errore caricamento post:', err);
+    posts = [];
+  }
+}
+
+// ─── Navigation ────────────────────────────────────────────
+function navigate(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (el) el.classList.add('active');
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'posts') renderPostsTable();
+  if (page === 'bestworst') renderBestWorst();
+  if (page === 'settings') loadSnapshotForm();
+}
+
+// ─── Add post ──────────────────────────────────────────────
+async function addPost() {
+  const post = {
+    date: document.getElementById('f-date').value,
+    title: document.getElementById('f-title').value,
+    platform: document.getElementById('f-platform').value,
+    type: document.getElementById('f-type').value,
+    tone: document.getElementById('f-tone').value,
+    series: document.getElementById('f-series').value || null,
+    followers: parseInt(document.getElementById('f-followers').value) || 0,
+    likes: parseInt(document.getElementById('f-likes').value) || 0,
+    comments: parseInt(document.getElementById('f-comments').value) || 0,
+    saves: parseInt(document.getElementById('f-saves').value) || 0,
+    reach: parseInt(document.getElementById('f-reach').value) || 0,
+    views: parseInt(document.getElementById('f-views').value) || 0,
+    shares: parseInt(document.getElementById('f-shares').value) || 0,
+    hashtags: document.getElementById('f-hashtags').value,
+    notes: document.getElementById('f-notes').value
+  };
+  const followers = post.followers || 1;
+  post.engagement_rate = (((post.likes + post.comments + post.saves) / followers) * 100).toFixed(2);
+  if (!post.date || !post.title) { alert('Inserisci almeno data e titolo.'); return; }
+  try {
+    await db.insert('posts', post);
+    await loadPosts();
+    clearForm();
+    alert('Post salvato ✓');
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+function clearForm() {
+  ['f-date','f-title','f-followers','f-likes','f-comments','f-saves','f-reach','f-views','f-shares','f-hashtags','f-notes','f-series'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+// ─── Render Dashboard ──────────────────────────────────────
+function renderDashboard() {
+  if (posts.length === 0) {
+    document.getElementById('kpi-followers').textContent = snapshot.followers || '—';
+    document.getElementById('kpi-avg-likes').textContent = snapshot.avgLikes || '—';
+    document.getElementById('kpi-avg-reach').textContent = snapshot.avgReach || '—';
+    document.getElementById('kpi-er').textContent = snapshot.avgER ? snapshot.avgER + '%' : '—';
+    return;
+  }
+  const avgLikes = (posts.reduce((s,p) => s+(p.likes||0), 0) / posts.length).toFixed(1);
+  const avgReach = (posts.reduce((s,p) => s+(p.reach||0), 0) / posts.length).toFixed(0);
+  const avgER = (posts.reduce((s,p) => s+(parseFloat(p.engagement_rate)||0), 0) / posts.length).toFixed(2);
+  const lastFollowers = posts[posts.length-1]?.followers || snapshot.followers || '—';
+  document.getElementById('kpi-followers').textContent = lastFollowers;
+  document.getElementById('kpi-avg-likes').textContent = avgLikes;
+  document.getElementById('kpi-avg-reach').textContent = avgReach;
+  document.getElementById('kpi-er').textContent = avgER + '%';
+  renderCharts();
+}
+
+function renderCharts() {
+  const chartDefaults = {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } }
     }
   };
 
-  // ─── State ───────────────────────────────────────────────
-  let posts = [];
-  let snapshot = JSON.parse(localStorage.getItem('miky4k_snapshot') || '{}');
-  let charts = {};
+  // Follower chart
+  const followerData = posts.filter(p => p.followers).map(p => ({ x: p.date?.slice(0,10), y: p.followers }));
+  if (charts.followers) charts.followers.destroy();
+  charts.followers = new Chart(document.getElementById('chart-followers'), {
+    type: 'line',
+    data: { labels: followerData.map(d => d.x), datasets: [{ data: followerData.map(d => d.y), borderColor: '#b08ff5', backgroundColor: 'rgba(176,143,245,0.08)', tension: 0.4, fill: true, pointBackgroundColor: '#b08ff5', pointRadius: 3 }] },
+    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false }
+  });
 
-  // ─── Load posts from Supabase ─────────────────────────────
-  async function loadPosts() {
+  // Likes & reach per post
+  const labels = posts.slice(-15).map(p => p.title?.slice(0,12) || p.date?.slice(5,10));
+  if (charts.likesReach) charts.likesReach.destroy();
+  charts.likesReach = new Chart(document.getElementById('chart-likes-reach'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { data: posts.slice(-15).map(p => p.likes||0), backgroundColor: 'rgba(176,143,245,0.5)', borderColor: '#b08ff5', borderWidth: 1, label: 'Like' },
+      { data: posts.slice(-15).map(p => p.reach||0), backgroundColor: 'rgba(244,149,106,0.3)', borderColor: '#f4956a', borderWidth: 1, label: 'Reach' }
+    ]},
+    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } } } }
+  });
+
+  // Performance per tono
+  const toneMap = {};
+  posts.forEach(p => { if (p.tone) { if (!toneMap[p.tone]) toneMap[p.tone] = []; toneMap[p.tone].push(p.likes||0); } });
+  const toneLabels = Object.keys(toneMap);
+  const toneAvg = toneLabels.map(t => (toneMap[t].reduce((a,b)=>a+b,0)/toneMap[t].length).toFixed(1));
+  if (charts.tone) charts.tone.destroy();
+  charts.tone = new Chart(document.getElementById('chart-tone'), {
+    type: 'bar',
+    data: { labels: toneLabels, datasets: [{ data: toneAvg, backgroundColor: toneLabels.map((_,i) => `hsla(${260+i*25},70%,70%,0.5)`), borderWidth: 0 }] },
+    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+  });
+}
+
+// ─── Posts table ───────────────────────────────────────────
+function renderPostsTable() {
+  const tbody = document.getElementById('posts-table-body');
+  if (posts.length === 0) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">◻</div><div class="empty-label">Nessun post tracciato</div></div></td></tr>'; return; }
+  tbody.innerHTML = posts.slice().reverse().map(p => `
+    <tr>
+      <td>${p.date?.slice(0,10) || '—'}</td>
+      <td><div class="td-title">${p.title || '—'}</div>${p.series ? `<div style="font-size:8px;color:var(--muted);margin-top:2px;">${p.series}</div>` : ''}</td>
+      <td><span class="td-type">${p.type || '—'}</span></td>
+      <td><span class="td-tone">${p.tone || '—'}</span></td>
+      <td><span class="td-num">${p.likes||0}</span></td>
+      <td><span class="td-num">${p.reach||0}</span></td>
+      <td><span class="td-num">${p.comments||0}</span></td>
+      <td><span class="td-num">${p.saves||0}</span></td>
+      <td><span class="score-badge ${parseFloat(p.engagement_rate)>=2?'high':parseFloat(p.engagement_rate)>=1?'mid':'low'}">${p.engagement_rate||'—'}%</span></td>
+      <td><div class="td-actions"><button class="btn-icon danger" onclick="deletePost(${p.id})">✕</button></div></td>
+    </tr>`).join('');
+}
+
+async function deletePost(id) {
+  if (!confirm('Eliminare questo post?')) return;
+  await db.delete('posts', id);
+  await loadPosts();
+  renderPostsTable();
+}
+
+// ─── Best / Worst ──────────────────────────────────────────
+function renderBestWorst() {
+  const sorted = [...posts].filter(p => p.engagement_rate);
+  if (sorted.length === 0) return;
+  const byER = [...sorted].sort((a,b) => parseFloat(b.engagement_rate)-parseFloat(a.engagement_rate));
+  const byReach = [...sorted].sort((a,b) => (b.reach||0)-(a.reach||0));
+  const byLikes = [...sorted].sort((a,b) => (b.likes||0)-(a.likes||0));
+  renderBWList('best-er-list', byER.slice(0,3), 'engagement_rate', '%');
+  renderBWList('worst-er-list', byER.slice(-3).reverse(), 'engagement_rate', '%', true);
+  renderBWList('best-reach-list', byReach.slice(0,3), 'reach', '');
+  renderBWList('worst-likes-list', byLikes.slice(-3).reverse(), 'likes', '', true);
+}
+
+function renderBWList(id, items, metric, suffix, bad=false) {
+  const el = document.getElementById(id);
+  if (!el || items.length===0) return;
+  el.innerHTML = items.map(p => `
+    <div class="bw-item">
+      <div><div class="bw-title">${p.title||'—'}</div><div class="bw-meta">${p.date?.slice(0,10)||''} · ${p.tone||''} · ${p.type||''}</div></div>
+      <div><div class="bw-score ${bad?'bad':''}">${p[metric]||'—'}</div><div class="bw-score-label">${metric}${suffix}</div></div>
+    </div>`).join('');
+}
+
+// ─── CSV Import ────────────────────────────────────────────
+function handleCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const lines = e.target.result.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].split(',');
+      const row = {};
+      headers.forEach((h, idx) => { row[h] = vals[idx]?.trim() || ''; });
+      const f = parseInt(row.followers) || 1;
+      const l = parseInt(row.likes) || 0;
+      const c = parseInt(row.comments) || 0;
+      const s = parseInt(row.saves) || 0;
+      row.engagement_rate = (((l+c+s)/f)*100).toFixed(2);
+      if (row.date && row.title) rows.push(row);
+    }
+    if (rows.length === 0) { document.getElementById('csv-status').textContent = '✕ Nessuna riga valida trovata.'; return; }
     try {
-      posts = await db.fetch('posts');
-      if (!Array.isArray(posts)) posts = [];
-      document.getElementById('totalPostsCount').textContent = posts.length;
-      renderDashboard();
-    } catch(err) {
-      console.error('Errore caricamento post:', err);
-      posts = [];
-    }
-  }
+      await db.insertMany('posts', rows);
+      await loadPosts();
+      document.getElementById('csv-status').textContent = `✓ ${rows.length} post importati.`;
+    } catch(err) { document.getElementById('csv-status').textContent = '✕ Errore: ' + err.message; }
+  };
+  reader.readAsText(file);
+}
 
-  // ─── Navigation ──────────────────────────────────────────
-  function navigate(page) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('page-' + page).classList.add('active');
-    event.currentTarget.classList.add('active');
-    if (page === 'dashboard') renderDashboard();
-    if (page === 'posts') renderPostsTable();
-    if (page === 'bestworst') renderBestWorst();
-    if (page === 'settings') loadSnapshotForm();
-  }
+// ─── Snapshot ──────────────────────────────────────────────
+function saveSnapshot() {
+  snapshot = {
+    followers: parseInt(document.getElementById('s-followers').value) || 0,
+    avgLikes: parseFloat(document.getElementById('s-avg-likes').value) || 0,
+    avgReach: parseFloat(document.getElementById('s-avg-reach').value) || 0,
+    avgER: parseFloat(document.getElementById('s-avg-er').value) || 0,
+    avgViews: parseFloat(document.getElementById('s-avg-views').value) || 0,
+    date: document.getElementById('s-date').value
+  };
+  localStorage.setItem('miky4k_snapshot', JSON.stringify(snapshot));
+  document.getElementById('snapshot-status').textContent = '✓ salvato';
+  setTimeout(() => { document.getElementById('snapshot-status').textContent = ''; }, 2000);
+}
 
-  // ─── Add post ─────────────────────────────────────────────
-  async function addPost() {
-    const followers = parseInt(document.getElementById('f-followers').value) || 0;
-    const likes     = parseInt(document.getElementById('f-likes').value) || 0;
-    const comments  = parseInt(document.getElementById('f-comments').value) || 0;
-    const saves     = parseInt(document.getElementById('f-saves').value) || 0;
-    const shares    = parseInt(document.getElementById('f-shares').value) || 0;
-    const reach     = parseInt(document.getElementById('f-reach').value) || 0;
+function loadSnapshotForm() {
+  if (snapshot.followers) document.getElementById('s-followers').value = snapshot.followers;
+  if (snapshot.avgLikes) document.getElementById('s-avg-likes').value = snapshot.avgLikes;
+  if (snapshot.avgReach) document.getElementById('s-avg-reach').value = snapshot.avgReach;
+  if (snapshot.avgER) document.getElementById('s-avg-er').value = snapshot.avgER;
+  if (snapshot.avgViews) document.getElementById('s-avg-views').value = snapshot.avgViews;
+  if (snapshot.date) document.getElementById('s-date').value = snapshot.date;
+}
 
-    const er = followers > 0
-      ? parseFloat((((likes + comments + saves + shares) / followers) * 100).toFixed(2))
-      : 0;
+// ─── Export ────────────────────────────────────────────────
+function exportCSV() {
+  const headers = ['date','title','type','tone','series','likes','comments','saves','reach','views','shares','followers','engagement_rate','hashtags','notes'];
+  const rows = posts.map(p => headers.map(h => `"${(p[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `miky4k-analytics-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
 
-    const post = {
-      id: Date.now(),
-      date: document.getElementById('f-date').value || new Date().toISOString().slice(0,10),
-      title: document.getElementById('f-title').value || 'Senza titolo',
-      platform: document.getElementById('f-platform').value,
-      type: document.getElementById('f-type').value,
-      tone: document.getElementById('f-tone').value,
-      followers, likes, comments, saves, reach,
-      views: parseInt(document.getElementById('f-views').value) || 0,
-      shares,
-      hashtags: document.getElementById('f-hashtags').value,
-      notes: document.getElementById('f-notes').value,
-      er
-    };
+function resetData() {
+  if (!confirm('Eliminare TUTTI i post? Questa azione non è reversibile.')) return;
+  db.deleteAll('posts').then(() => { posts = []; document.getElementById('totalPostsCount').textContent = '0'; renderDashboard(); renderPostsTable(); });
+}
 
-    try {
-      await db.insert('posts', post);
-      posts.push(post);
-      document.getElementById('totalPostsCount').textContent = posts.length;
-      clearForm();
-      alert('Post salvato ✦');
-    } catch(err) {
-      alert('Errore nel salvataggio: ' + err.message);
-    }
-  }
-
-  function clearForm() {
-    ['f-date','f-title','f-followers','f-likes','f-comments','f-saves','f-reach','f-views','f-shares','f-hashtags','f-notes']
-      .forEach(id => document.getElementById(id).value = '');
-  }
-
-  async function deletePost(id) {
-    if (!confirm('Eliminare questo post?')) return;
-    try {
-      await db.delete('posts', id);
-      posts = posts.filter(p => p.id !== id);
-      document.getElementById('totalPostsCount').textContent = posts.length;
-      renderPostsTable();
-    } catch(err) {
-      alert('Errore eliminazione: ' + err.message);
-    }
-  }
-
-  // ─── CSV Import ───────────────────────────────────────────
-  function handleCSV(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const lines = e.target.result.trim().split('\n');
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-        const rows = [];
-
-        for (let i = 1; i < lines.length; i++) {
-          const vals = lines[i].split(',');
-          const row = {};
-          headers.forEach((h, idx) => row[h] = (vals[idx] || '').trim());
-
-          const followers = parseInt(row.followers) || 0;
-          const likes     = parseInt(row.likes) || 0;
-          const comments  = parseInt(row.comments) || 0;
-          const saves     = parseInt(row.saves) || 0;
-          const shares    = parseInt(row.shares) || 0;
-          const er = followers > 0
-            ? parseFloat((((likes + comments + saves + shares) / followers) * 100).toFixed(2))
-            : 0;
-
-          rows.push({
-            id: Date.now() + i,
-            date: row.date || '',
-            title: row.title || 'Import',
-            platform: row.platform || 'instagram',
-            type: row.type || '',
-            tone: row.tone || '',
-            followers, likes, comments, saves,
-            reach: parseInt(row.reach) || 0,
-            views: parseInt(row.views) || 0,
-            shares,
-            hashtags: row.hashtags || '',
-            notes: row.notes || '',
-            er
-          });
-        }
-
-        await db.insertMany('posts', rows);
-        posts = [...posts, ...rows];
-        document.getElementById('totalPostsCount').textContent = posts.length;
-        document.getElementById('csv-status').textContent = `✦ ${rows.length} post importati correttamente.`;
-      } catch(err) {
-        document.getElementById('csv-status').textContent = 'Errore nel parsing del CSV.';
-        console.error(err);
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  // ─── Snapshot (resta su localStorage) ────────────────────
-  function loadSnapshotForm() {
-    if (snapshot.followers) document.getElementById('s-followers').value = snapshot.followers;
-    if (snapshot.avgLikes)  document.getElementById('s-avg-likes').value = snapshot.avgLikes;
-    if (snapshot.avgReach)  document.getElementById('s-avg-reach').value = snapshot.avgReach;
-    if (snapshot.avgER)     document.getElementById('s-avg-er').value = snapshot.avgER;
-    if (snapshot.avgViews)  document.getElementById('s-avg-views').value = snapshot.avgViews;
-    if (snapshot.date)      document.getElementById('s-date').value = snapshot.date;
-  }
-
-  function saveSnapshot() {
-    snapshot = {
-      followers: parseInt(document.getElementById('s-followers').value) || null,
-      avgLikes:  parseInt(document.getElementById('s-avg-likes').value) || null,
-      avgReach:  parseInt(document.getElementById('s-avg-reach').value) || null,
-      avgER:     parseFloat(document.getElementById('s-avg-er').value) || null,
-      avgViews:  parseInt(document.getElementById('s-avg-views').value) || null,
-      date:      document.getElementById('s-date').value || new Date().toISOString().slice(0,10)
-    };
-    localStorage.setItem('miky4k_snapshot', JSON.stringify(snapshot));
-    const s = document.getElementById('snapshot-status');
-    s.textContent = '✦ Salvato';
-    setTimeout(() => s.textContent = '', 2500);
-  }
-
-  // ─── Export CSV ───────────────────────────────────────────
-  function exportCSV() {
-    if (!posts.length) { alert('Nessun post da esportare.'); return; }
-    const headers = 'date,title,platform,type,tone,followers,likes,comments,saves,reach,views,shares,er,hashtags,notes';
-    const rows = posts.map(p =>
-      [p.date,p.title,p.platform,p.type,p.tone,p.followers,p.likes,p.comments,p.saves,p.reach,p.views,p.shares,p.er,p.hashtags,p.notes].join(',')
-    );
-    const csv = [headers, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'miky4k_analytics.csv'; a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ─── Reset ────────────────────────────────────────────────
-  async function resetData() {
-    if (!confirm('Sei sicuro? Tutti i post verranno eliminati da Supabase.')) return;
-    try {
-      await db.deleteAll('posts');
-      posts = [];
-      document.getElementById('totalPostsCount').textContent = 0;
-      renderPostsTable();
-      alert('Dati resettati.');
-    } catch(err) {
-      alert('Errore reset: ' + err.message);
-    }
-  }
-
-  // ─── Dashboard ────────────────────────────────────────────
-  function renderDashboard() {
-    // Use snapshot as baseline if no posts yet
-    if (!posts.length) {
-      if (snapshot.followers) document.getElementById('kpi-followers').textContent = snapshot.followers.toLocaleString();
-      if (snapshot.avgLikes)  document.getElementById('kpi-avg-likes').textContent = snapshot.avgLikes;
-      if (snapshot.avgReach)  document.getElementById('kpi-avg-reach').textContent = snapshot.avgReach.toLocaleString();
-      if (snapshot.avgER)     document.getElementById('kpi-er').textContent = snapshot.avgER + '%';
-      if (snapshot.date) {
-        ['kpi-followers-delta','kpi-likes-delta','kpi-reach-delta','kpi-er-delta'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) { el.textContent = 'snapshot del ' + snapshot.date; el.className = 'kpi-delta'; }
-        });
-      }
-      return;
-    }
-
-    const sorted = [...posts].sort((a,b) => a.date.localeCompare(b.date));
-    const last = sorted[sorted.length - 1];
-    const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null;
-
-    // KPIs
-    document.getElementById('kpi-followers').textContent = last.followers.toLocaleString();
-    const avgLikes = Math.round(posts.reduce((s,p) => s + p.likes, 0) / posts.length);
-    const avgReach = Math.round(posts.reduce((s,p) => s + p.reach, 0) / posts.length);
-    const avgER    = (posts.reduce((s,p) => s + p.er, 0) / posts.length).toFixed(2);
-
-    document.getElementById('kpi-avg-likes').textContent = avgLikes;
-    document.getElementById('kpi-avg-reach').textContent = avgReach.toLocaleString();
-    document.getElementById('kpi-er').textContent = avgER + '%';
-
-    if (prev) {
-      const fDelta = last.followers - prev.followers;
-      const el = document.getElementById('kpi-followers-delta');
-      el.textContent = (fDelta >= 0 ? '+' : '') + fDelta + ' dall\'ultimo post';
-      el.className = 'kpi-delta ' + (fDelta >= 0 ? 'up' : 'down');
-    }
-
-    // Chart: followers
-    const flabels = sorted.map(p => p.date);
-    const fdata   = sorted.map(p => p.followers);
-    renderLineChart('chart-followers', flabels, [
-      { label: 'Follower', data: fdata, color: '#b08ff5' }
-    ]);
-
-    // Chart: likes + reach per post
-    const plabels = sorted.map(p => p.title.replace('SOFT_STATE ', ''));
-    renderBarChart('chart-likes-reach', plabels, [
-      { label: 'Like', data: sorted.map(p => p.likes), color: '#f4a0d4' },
-      { label: 'Reach', data: sorted.map(p => p.reach), color: '#f4956a' }
-    ]);
-
-    // Chart: tone performance
-    const tones = [...new Set(posts.map(p => p.tone).filter(Boolean))];
-    const toneER = tones.map(t => {
-      const tp = posts.filter(p => p.tone === t);
-      return (tp.reduce((s,p) => s + p.er, 0) / tp.length).toFixed(2);
-    });
-    renderBarChart('chart-tone', tones, [
-      { label: 'ER medio %', data: toneER, color: '#b08ff5' }
-    ]);
-  }
-
-  function renderLineChart(id, labels, datasets) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: datasets.map(d => ({
-          label: d.label,
-          data: d.data,
-          borderColor: d.color,
-          backgroundColor: d.color + '18',
-          pointBackgroundColor: d.color,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          borderWidth: 1.5,
-          fill: true,
-          tension: 0.4
-        }))
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } },
-          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } }
-        }
-      }
-    });
-  }
-
-  function renderBarChart(id, labels, datasets) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: datasets.map(d => ({
-          label: d.label,
-          data: d.data,
-          backgroundColor: d.color + '55',
-          borderColor: d.color,
-          borderWidth: 1,
-          borderRadius: 3
-        }))
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } } },
-        scales: {
-          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } },
-          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a6490', font: { family: 'Space Mono', size: 9 } } }
-        }
-      }
-    });
-  }
-
-  // ─── Posts table ──────────────────────────────────────────
-  function renderPostsTable() {
-    const tbody = document.getElementById('posts-table-body');
-    if (!posts.length) {
-      tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">◻</div><div class="empty-label">Nessun post tracciato</div></div></td></tr>';
-      return;
-    }
-    const sorted = [...posts].sort((a,b) => b.date.localeCompare(a.date));
-    tbody.innerHTML = sorted.map(p => {
-      const erClass = p.er >= 3 ? 'high' : p.er >= 1 ? 'mid' : 'low';
-      return `
-        <tr>
-          <td style="color:var(--muted);font-size:10px;">${p.date}</td>
-          <td><div class="td-title">${p.title}</div><div style="font-size:9px;color:var(--muted);margin-top:2px;">${p.platform}</div></td>
-          <td><span class="td-type">${p.type}</span></td>
-          <td><span class="td-tone">${p.tone}</span></td>
-          <td><div class="td-num">${p.likes}</div></td>
-          <td><div class="td-num">${p.reach.toLocaleString()}</div></td>
-          <td><div class="td-num">${p.comments}</div></td>
-          <td><div class="td-num">${p.saves}</div></td>
-          <td><span class="score-badge ${erClass}">${p.er}%</span></td>
-          <td><div class="td-actions">
-            <button class="btn-icon danger" onclick="deletePost(${p.id})">✕</button>
-          </div></td>
-        </tr>`;
-    }).join('');
-  }
-
-  // ─── Best / Worst ─────────────────────────────────────────
-  function renderBestWorst() {
-    if (!posts.length) return;
-
-    const byER    = [...posts].sort((a,b) => b.er - a.er);
-    const byReach = [...posts].sort((a,b) => b.reach - a.reach);
-    const byLikes = [...posts].sort((a,b) => a.likes - b.likes);
-
-    renderBWList('best-er-list', byER.slice(0,3), 'er', '%', false);
-    renderBWList('worst-er-list', byER.slice(-3).reverse(), 'er', '%', true);
-    renderBWList('best-reach-list', byReach.slice(0,3), 'reach', '', false);
-    renderBWList('worst-likes-list', byLikes.slice(0,3), 'likes', '', true);
-  }
-
-  function renderBWList(containerId, items, metric, suffix, bad) {
-    const el = document.getElementById(containerId);
-    if (!items.length) return;
-    el.innerHTML = items.map(p => `
-      <div class="bw-item">
-        <div>
-          <div class="bw-title">${p.title}</div>
-          <div class="bw-meta">${p.date} · ${p.type} · ${p.tone}</div>
-        </div>
-        <div>
-          <div class="bw-score ${bad ? 'bad' : ''}">${p[metric]}${suffix}</div>
-          <div class="bw-score-label">${metric}</div>
-        </div>
-      </div>`).join('');
-  }
-
-  // ─── Init ─────────────────────────────────────────────────
-  loadPosts();
+// ─── Init ──────────────────────────────────────────────────
+loadPosts();
 </script>
 </body>
 </html>
