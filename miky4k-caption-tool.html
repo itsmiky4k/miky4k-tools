@@ -484,7 +484,7 @@ Estrai:
 
   try {
     const data = await callAPI({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 600,
       system: systemPrompt,
       messages: [{
@@ -611,7 +611,7 @@ Rispondi SOLO con JSON valido:
       { type: 'text', text: userMsg }
     ] : userMsg }];
 
-    const data = await callAPI({ model: 'claude-sonnet-4-20250514', max_tokens: 1200, system: systemPrompt, messages });
+    const data = await callAPI({ model: 'claude-sonnet-4-6', max_tokens: 1200, system: systemPrompt, messages });
     const raw = data.content.map(i => i.text || '').join('').trim();
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
@@ -660,7 +660,7 @@ Analizza la caption fornita. Rispondi SOLO con JSON valido:
 
   try {
     const data = await callAPI({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1200,
       system: systemPrompt,
       messages: [{ role: 'user', content: `Analizza questa caption:\n\n${caption}` }]
